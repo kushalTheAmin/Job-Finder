@@ -1,0 +1,162 @@
+"""Indeed job scraper using web scraping."""
+
+import requests
+from bs4 import BeautifulSoup
+from typing import List, Dict, Any
+import time
+import re
+from urllib.parse import urljoin
+from . import BaseScraper
+
+
+class IndeedScraper(BaseScraper):
+    """Scraper for Indeed job listings."""
+
+    BASE_URL = "https://www.indeed.com/jobs"
+
+    def __init__(self, config: Any):
+        """Initialize Indeed scraper."""
+        super().__init__(config)
+        self.delay = config.get('sources', 'scraping', 'delay_between_requests', default=2)
+        self.max_pages = config.get('sources', 'scraping', 'max_pages', default=3)
+
+    def search(self, title: str, location: str, **kwargs) -> List[Dict[str, Any]]:
+        """Search for jobs on Indeed."""
+        try:
+            jobs = []
+
+            # Build search parameters
+            params = {
+                'q': title,
+                'l': location,
+                'fromage': 7,  # Last 7 days
+                'sort': 'date'
+            }
+
+            # Set headers to mimic browser
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            }
+
+            self.logger.info(f"Searching Indeed for '{title}' in '{location}'")
+
+            # Scrape multiple pages
+            for page in range(self.max_pages):
+                params['start'] = page * 10
+
+                try:
+                    response = requests.get(
+                        self.BASE_URL,
+                        params=params,
+                        headers=headers,
+                        timeout=30
+                    )
+                    response.raise_for_status()
+
+                    page_jobs = self._parse_page(response.text)
+                    jobs.extend(page_jobs)
+
+                    # Respect rate limiting
+                    if page < self.max_pages - 1:
+                        time.sleep(self.delay)
+
+                except Exception as e:
+                    self.logger.error(f"Error scraping Indeed page {page}: {str(e)}")
+                    break
+
+            self.logger.info(f"Found {len(jobs)} jobs from Indeed")
+            return jobs
+
+        except Exception as e:
+            self.logger.error(f"Unexpected error in Indeed scraper: {str(e)}")
+            return []
+
+    def _parse_page(self, html: str) -> List[Dict[str, Any]]:
+        """Parse Indeed search results page."""
+        jobs = []
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Find job cards (Indeed frequently changes their class names)
+        # Try multiple selectors
+        job_cards = (
+            soup.find_all('div', class_=re.compile(r'job_seen_beacon')) or
+            soup.find_all('div', class_=re.compile(r'resultContent')) or
+            soup.find_all('td', class_='resultContent')
+        )
+
+        for card in job_cards:
+            try:
+                job = self._parse_job_card(card)
+                if job and self._is_valid_job(job):
+                    jobs.append(job)
+            except Exception as e:
+                self.logger.debug(f"Error parsing job card: {str(e)}")
+                continue
+
+        return jobs
+
+    def _parse_job_card(self, card) -> Dict[str, Any]:
+        """Parse individual job card."""
+        # Extract title
+        title_elem = card.find('h2', class_=re.compile(r'jobTitle'))
+        if not title_elem:
+            title_elem = card.find('a', class_=re.compile(r'jcs-JobTitle'))
+
+        title = ''
+        if title_elem:
+            # Title might be in a nested span or the element itself
+            title_span = title_elem.find('span')
+            title = title_span.text.strip() if title_span else title_elem.text.strip()
+
+        # Extract company
+        company_elem = card.find('span', {'data-testid': 'company-name'})
+        if not company_elem:
+            company_elem = card.find('span', class_=re.compile(r'companyName'))
+        company = company_elem.text.strip() if company_elem else ''
+
+        # Extract location
+        location_elem = card.find('div', {'data-testid': 'text-location'})
+        if not location_elem:
+            location_elem = card.find('div', class_=re.compile(r'companyLocation'))
+        location = location_elem.text.strip() if location_elem else ''
+
+        # Extract URL
+        link_elem = title_elem.find('a') if title_elem else None
+        if not link_elem:
+            link_elem = card.find('a', class_=re.compile(r'jcs-JobTitle'))
+        url = urljoin('https://www.indeed.com', link_elem.get('href', '')) if link_elem else ''
+
+        # Extract salary
+        salary_elem = card.find('div', class_=re.compile(r'salary-snippet'))
+        salary = salary_elem.text.strip() if salary_elem else ''
+
+        # Extract snippet/description
+        snippet_elem = card.find('div', class_=re.compile(r'job-snippet'))
+        if not snippet_elem:
+            snippet_elem = card.find('div', {'data-testid': 'job-snippet'})
+        description = snippet_elem.text.strip() if snippet_elem else f"{title} position at {company}"
+
+        # Extract job type
+        metadata = card.find('div', class_=re.compile(r'metadata'))
+        job_type = 'Full-time'
+        if metadata and 'part-time' in metadata.text.lower():
+            job_type = 'Part-time'
+        elif metadata and 'contract' in metadata.text.lower():
+            job_type = 'Contract'
+
+        # Create job object
+        job = {
+            'title': title,
+            'company': company,
+            'location': location,
+            'description': self._clean_description(description),
+            'url': url,
+            'posted_date': '',
+            'salary': salary,
+            'job_type': job_type,
+            'remote': 'remote' in location.lower() or 'remote' in description.lower(),
+        }
+
+        return job

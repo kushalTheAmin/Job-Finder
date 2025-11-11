@@ -1,0 +1,131 @@
+# Job Finder Configuration File
+# Edit these settings to customize your job search
+
+job_search:
+  # Job title to search for (can be a list)
+  default_titles:
+    - "Senior Full Stack Software Engineer"
+    - "Senior Full Stack Developer"
+    - "Lead Full Stack Engineer"
+
+  # Locations to search (can be multiple)
+  default_locations:
+    - "New York, NY"
+    - "New Jersey, NJ"
+    - "Remote"
+
+  # Experience level
+  experience_level: "Senior"
+
+  # Job types to include
+  job_types:
+    - "Full-time"
+
+  # Accept remote jobs
+  remote_ok: true
+
+  # Required skills (optional - leave empty for all)
+  required_skills:
+    - "Python"
+    - "JavaScript"
+    - "React"
+    - "Node.js"
+
+  # Preferred skills (nice to have)
+  preferred_skills:
+    - "AI/ML"
+    - "Cloud"
+    - "Docker"
+    - "Kubernetes"
+
+matching:
+  # Minimum match percentage (jobs below this are ignored)
+  min_match_percentage: 60
+
+  # Maximum number of jobs to process per day
+  max_jobs_per_day: 10
+
+  # Sort by match score
+  sort_by_match: true
+
+schedule:
+  # Time to run daily (24-hour format)
+  run_time: "08:00"
+
+  # Timezone
+  timezone: "America/New_York"
+
+  # Days to run (0 = Monday, 6 = Sunday)
+  run_days: [0, 1, 2, 3, 4]  # Monday to Friday
+
+resume:
+  # Path to your master resume
+  master_resume_path: "data/master_resume.json"
+
+  # Output format (pdf, docx, html)
+  output_format: "pdf"
+
+  # Customize these sections
+  customize_sections:
+    - "summary"
+    - "skills"
+    - "experience"
+
+notifications:
+  # Your email address
+  email_to: "your.email@gmail.com"
+
+  # Send email notifications
+  send_email: true
+
+  # Upload to Google Drive
+  upload_to_drive: true
+
+  # Google Drive folder ID (get from Drive URL)
+  google_drive_folder_id: "YOUR_FOLDER_ID"
+
+sources:
+  # Enable/disable job sources
+  enabled:
+    - "adzuna"
+    - "jsearch"
+    - "linkedin"
+    - "indeed"
+
+  # API keys and configuration
+  adzuna:
+    app_id: ""  # Get from https://developer.adzuna.com/
+    app_key: ""
+
+  jsearch:
+    api_key: ""  # Get from RapidAPI
+
+  # Scraping configuration
+  scraping:
+    use_proxy: false
+    max_pages: 3
+    delay_between_requests: 2  # seconds
+
+google_cloud:
+  # Google Cloud Project ID
+  project_id: "YOUR_PROJECT_ID"
+
+  # Vertex AI configuration
+  vertex_ai:
+    location: "us-central1"
+    model: "gemini-2.0-flash-exp"
+
+  # Firestore collection names
+  firestore:
+    jobs_collection: "applied_jobs"
+    history_collection: "job_history"
+
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+
+  # Log to file
+  log_to_file: true
+
+  # Log file path
+  log_file: "logs/job_finder.log"

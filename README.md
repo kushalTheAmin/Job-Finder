@@ -101,7 +101,24 @@ Every Day at 8 AM:
 Your resume needs to be in JSON format. We've included a sample in `data/master_resume.json`.
 
 **Option A**: Edit the sample file with your info
-**Option B**: Use a converter tool (we can provide one!)
+
+**Option B**: Use our converter tool - converts PDF/DOCX/TXT to JSON automatically!
+
+```bash
+# Install converter dependencies
+pip install PyPDF2 python-docx
+
+# Run the interactive converter
+python tools/resume_converter.py
+
+# It will:
+# 1. Ask for your resume (PDF, DOCX, TXT, or paste text)
+# 2. Extract the text
+# 3. Convert to JSON using AI (or provide a template)
+# 4. Save to data/master_resume.json
+```
+
+See `tools/README.md` for detailed converter documentation.
 
 ### Step 2: Get API Keys (All Free!)
 

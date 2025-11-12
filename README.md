@@ -30,19 +30,31 @@ Every Day at 8 AM:
 
 ## Features
 
+### 🧠 **NEW: Intelligent Story-Based Customization**
+- **Thinks holistically** about your resume, not just bullet-by-bullet
+- **2-3 mention rule**: Technologies appear multiple times with coherent context
+- **Timeline intelligence**: Never adds tech that didn't exist in that time period
+- **Coherence validation**: Ensures resume sounds authentic, not keyword-stuffed
+- **Confidence scoring**: Tells you which changes need interview prep
+- **Interview prep guides**: Auto-generated study plans for added skills
+
 ### ✨ Smart Job Matching
+- **Dual-brain analysis**: ATS Scanner + Human Recruiter perspective
 - Searches multiple job sites at once
 - AI calculates match percentage for each job
 - Only shows you jobs above your threshold (default: 60%)
 - Ranks jobs by best match first
+- Identifies CRITICAL vs NICE-TO-HAVE skills
 
 ### 🎨 AI-Powered Resume Customization
-- Reads the job description
-- Identifies required skills and technologies
-- Intelligently modifies your resume to match
-- Changes tech stack mentions (e.g., React → Angular if needed)
-- Highlights relevant experience
+- **Story templates**: Multiple apps, migration, integration, hybrid cloud
+- Reads the job description from both ATS and human perspectives
+- Identifies required skills and technologies with priority levels
+- Intelligently modifies your resume to match while staying authentic
+- Changes tech stack mentions (e.g., Vertex AI → OpenAI) only when coherent
+- Highlights relevant experience with specific metrics
 - **Keeps your core achievements and metrics unchanged**
+- **70% authentic / 30% keywords balance** (configurable)
 
 ### 🚫 No Duplicates
 - Tracks every job in Firestore database
@@ -60,10 +72,19 @@ Every Day at 8 AM:
 - Organized by job and date
 - Easy to access from anywhere
 
+### 📚 Interview Preparation
+- **Auto-generated prep guides** for each job
+- Study plans with estimated time (e.g., "6 hours total")
+- Sample interview questions and suggested answers
+- Resource links for each technology
+- Confidence assessment per change made
+
 ### ⚙️ Fully Configurable
 - Change job search criteria anytime
-- Adjust match threshold
+- Adjust match threshold and authenticity balance
 - Choose which job sites to search
+- Set modification aggressiveness (conservative/moderate/aggressive)
+- Configure minimum confidence scores
 - Set your own schedule
 
 ## Quick Start (For Beginners)

@@ -7,7 +7,7 @@ Main orchestrator script that runs the entire pipeline.
 import sys
 import logging
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 from datetime import datetime
 
 # Add src to path
@@ -17,7 +17,8 @@ from src.config import get_config
 from src.utils import setup_logging, load_json_file
 from src.scrapers.aggregator import JobAggregator
 from src.matcher.job_matcher import JobMatcher
-from src.resume.resume_customizer import ResumeCustomizer
+from src.resume.smart_customizer import SmartResumeCustomizer
+from src.resume.interview_prep import InterviewPrepGenerator
 from src.resume.pdf_generator import PDFResumeGenerator
 from src.storage.firestore_db import FirestoreDB
 from src.storage.gdrive import GoogleDriveUploader
@@ -48,7 +49,8 @@ class JobFinderOrchestrator:
         # Initialize components
         self.job_aggregator = JobAggregator(self.config)
         self.job_matcher = JobMatcher(self.config, self.master_resume)
-        self.resume_customizer = ResumeCustomizer(self.config, self.master_resume)
+        self.resume_customizer = SmartResumeCustomizer(self.config, self.master_resume)
+        self.interview_prep_gen = InterviewPrepGenerator()
         self.pdf_generator = PDFResumeGenerator()
         self.firestore = FirestoreDB(self.config)
         self.drive_uploader = GoogleDriveUploader(
@@ -57,6 +59,7 @@ class JobFinderOrchestrator:
         self.email_sender = EmailSender(self.config) if self.config.send_email else None
 
         logger.info("All components initialized successfully")
+        logger.info("Using Smart Resume Customizer with coherence validation")
 
     def run(self) -> Dict[str, Any]:
         """Execute the main job finding pipeline."""
@@ -97,11 +100,11 @@ class JobFinderOrchestrator:
             logger.info("=" * 60)
             top_jobs = self.job_matcher.rank_jobs(matched_jobs)
 
-            # Step 5: Customize resumes for each job
+            # Step 5: Customize resumes for each job (with interview prep)
             logger.info("\n" + "=" * 60)
-            logger.info("STEP 5: Customizing Resumes")
+            logger.info("STEP 5: Customizing Resumes & Generating Interview Prep")
             logger.info("=" * 60)
-            resume_files = self._customize_resumes(top_jobs)
+            resume_files, prep_guides = self._customize_resumes(top_jobs)
 
             # Step 6: Upload to Google Drive
             if self.drive_uploader and self.config.upload_to_drive:
@@ -110,12 +113,12 @@ class JobFinderOrchestrator:
                 logger.info("=" * 60)
                 self._upload_to_drive(resume_files)
 
-            # Step 7: Send email notification
+            # Step 7: Send email notification with prep guides
             if self.email_sender and self.config.send_email:
                 logger.info("\n" + "=" * 60)
                 logger.info("STEP 7: Sending Email Notification")
                 logger.info("=" * 60)
-                self._send_email(top_jobs, resume_files)
+                self._send_email(top_jobs, resume_files, prep_guides)
 
             # Step 8: Mark jobs as applied
             logger.info("\n" + "=" * 60)
@@ -162,16 +165,35 @@ class JobFinderOrchestrator:
         logger.info(f"Found {len(jobs)} total jobs")
         return jobs
 
-    def _customize_resumes(self, jobs: List[Dict[str, Any]]) -> List[str]:
-        """Customize resumes for each job and generate PDFs."""
+    def _customize_resumes(self, jobs: List[Dict[str, Any]]) -> Tuple[List[str], List[Dict[str, Any]]]:
+        """Customize resumes for each job and generate PDFs with interview prep."""
         resume_files = []
+        prep_guides = []
 
         for i, job in enumerate(jobs):
             try:
                 logger.info(f"\nCustomizing resume {i+1}/{len(jobs)} for: {job.get('title')} at {job.get('company')}")
 
-                # Customize resume
-                customized_resume = self.resume_customizer.customize_for_job(job)
+                # Smart customization with coherence validation
+                customized_resume, customization_report = self.resume_customizer.customize_for_job(job)
+
+                # Log customization details
+                logger.info(f"  Coherence Score: {customization_report.get('coherence_score', 0)}%")
+                logger.info(f"  Changes Made: {customization_report.get('total_changes', 0)}")
+                logger.info(f"  Interview Readiness: {customization_report.get('interview_readiness', 0)}%")
+
+                # Generate interview prep guide
+                if self.config.get('resume_customization', 'generate_interview_prep', default=True):
+                    prep_guide = self.interview_prep_gen.generate_prep_guide(customization_report, job)
+                    prep_guides.append(prep_guide)
+
+                    # Save prep guide as text file
+                    prep_text = self.interview_prep_gen.format_as_text(prep_guide)
+                    prep_file_path = Path('output/prep_guides') / f"prep_{job.get('company', 'job')}_{i}.txt"
+                    prep_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(prep_file_path, 'w') as f:
+                        f.write(prep_text)
+                    logger.info(f"  Generated interview prep guide: {prep_file_path.name}")
 
                 # Generate PDF
                 pdf_path = self.pdf_generator.generate(customized_resume, job)
@@ -195,14 +217,19 @@ class JobFinderOrchestrator:
             except Exception as e:
                 logger.error(f"Error uploading file: {str(e)}")
 
-    def _send_email(self, jobs: List[Dict[str, Any]], resume_files: List[str]) -> None:
-        """Send email notification with jobs and resumes."""
+    def _send_email(
+        self,
+        jobs: List[Dict[str, Any]],
+        resume_files: List[str],
+        prep_guides: List[Dict[str, Any]]
+    ) -> None:
+        """Send email notification with jobs, resumes, and interview prep guides."""
         stats = {
             'jobs_found': len(jobs),
             'avg_match_score': sum(j.get('match_score', 0) for j in jobs) / len(jobs) if jobs else 0
         }
 
-        success = self.email_sender.send_daily_report(jobs, resume_files, stats)
+        success = self.email_sender.send_daily_report(jobs, resume_files, stats, prep_guides)
         if success:
             logger.info(f"✓ Sent email to {self.config.email_to}")
         else:

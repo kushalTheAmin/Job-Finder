@@ -48,6 +48,41 @@ matching:
   # Sort by match score
   sort_by_match: true
 
+resume_customization:
+  # Authenticity vs Keywords balance (%)
+  # 70 = 70% authentic story, 30% keywords
+  authenticity_balance: 70
+
+  # How aggressive should AI be with modifications?
+  # conservative: 2-3 changes per job
+  # moderate: 3-5 changes per job
+  # aggressive: 5+ changes per job
+  modification_level: moderate
+
+  # Maximum skills to add per job
+  max_skills_to_add: 5
+
+  # Don't modify experience older than X years
+  max_experience_age_years: 5
+
+  # Minimum confidence score to add something (0-100)
+  min_confidence_score: 65
+
+  # Writing style
+  # action_focused: [ACTION] + [TECH] + [RESULT]
+  # corporate: More formal language
+  # technical: Very technical, detailed
+  style: action_focused
+
+  # Generate interview prep guides?
+  generate_interview_prep: true
+
+  # Interview prep detail level
+  # minimal: Just topics
+  # moderate: Topics + resources
+  # detailed: Topics + resources + sample questions
+  interview_prep_detail: moderate
+
 schedule:
   # Time to run daily (24-hour format)
   run_time: "08:00"

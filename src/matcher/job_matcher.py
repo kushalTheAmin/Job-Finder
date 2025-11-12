@@ -78,11 +78,10 @@ class JobMatcher:
         return match_score, analysis
 
     def _build_match_prompt(self, job: Dict[str, Any]) -> str:
-        """Build prompt for AI to analyze job match."""
+        """Build prompt for AI to analyze job match with dual-brain approach."""
         resume_summary = self._summarize_resume()
 
-        prompt = f"""You are an expert career advisor and ATS (Applicant Tracking System) analyzer.
-Your task is to analyze how well a candidate's resume matches a job posting.
+        prompt = f"""You are an expert career advisor with dual perspective: ATS Scanner + Human Recruiter.
 
 CANDIDATE RESUME:
 {resume_summary}
@@ -91,40 +90,86 @@ JOB POSTING:
 Title: {job.get('title', 'N/A')}
 Company: {job.get('company', 'N/A')}
 Location: {job.get('location', 'N/A')}
-Description: {job.get('description', 'N/A')[:2000]}
+Description: {job.get('description', 'N/A')[:2500]}
 
-ANALYSIS REQUIRED:
-1. Calculate an overall match percentage (0-100) based on:
-   - Skills match (technical and soft skills)
-   - Experience level match
-   - Industry/domain match
-   - Role responsibilities match
-   - Required vs optional qualifications
+DUAL ANALYSIS REQUIRED:
 
-2. Identify:
-   - Key matching skills and experiences
-   - Missing critical requirements
-   - Transferable skills that apply
-   - Technologies that need emphasis in resume
+PART 1 - ATS SCANNER BRAIN:
+Analyze like an ATS system:
+- Identify CRITICAL skills (in "Required" section or mentioned 3+ times)
+- Identify IMPORTANT skills (mentioned 2-3 times in description)
+- Identify OPTIONAL skills (mentioned once or "nice to have")
+- Extract key technical keywords that ATS will scan for
 
-3. Provide specific recommendations for resume customization
+PART 2 - HUMAN RECRUITER BRAIN:
+Think like a human recruiter reading this resume:
+- What would make me call this candidate for interview?
+- Do the achievements have specific numbers and impact?
+- Does the experience progression make sense?
+- Are there any red flags (gaps, job hopping, etc.)?
+
+PART 3 - MATCHING ANALYSIS:
+1. Calculate match percentage (0-100) considering:
+   - Do they have required skills? (40% weight)
+   - Do they have transferable/similar skills? (30% weight)
+   - Does experience level match? (15% weight)
+   - Does domain knowledge match? (15% weight)
+
+2. For each missing skill, determine:
+   - Relationship level:
+     * Level 1 (Identical): PostgreSQL ↔ MySQL, AWS S3 ↔ GCP Storage
+     * Level 2 (Same category): React ↔ Angular, Gemini ↔ OpenAI
+     * Level 3 (Learnable): React → Next.js, JavaScript → TypeScript
+     * Level 4 (Different): Frontend → Backend, Web → Mobile
+   - Confidence if added (0-100): How believable if added to resume?
+   - Best placement: Which job/section to add it to?
+
+3. Provide story templates for adding missing skills coherently
 
 OUTPUT FORMAT (JSON):
 {{
   "match_percentage": <number 0-100>,
   "matching_skills": [list of matching skills],
-  "missing_requirements": [list of missing critical requirements],
-  "transferable_skills": [list of applicable skills from resume],
-  "technology_mappings": [
-    {{"resume_tech": "X", "job_tech": "Y", "emphasis": "high/medium/low"}}
+  "missing_skills": [
+    {{
+      "skill": "skill name",
+      "priority": "CRITICAL/IMPORTANT/OPTIONAL",
+      "mention_count": <number of times mentioned in job>,
+      "relationship_to_resume": {{
+        "level": 1-4,
+        "similar_skill_in_resume": "what they have that's similar",
+        "confidence_if_added": <0-100>,
+        "reasoning": "why this confidence score"
+      }},
+      "addition_strategy": {{
+        "best_placement": "current_job/previous_job/skills_section/skip",
+        "story_template": "suggested story/context for adding this",
+        "minimum_mentions_needed": 2 or 3,
+        "sample_bullets": ["example bullet 1", "example bullet 2"]
+      }}
+    }}
   ],
-  "experience_match": "excellent/good/fair/poor",
-  "recommendations": [list of specific customization recommendations],
-  "key_highlights": [experience points to emphasize],
-  "ats_keywords": [important keywords from job description]
+  "technology_mappings": [
+    {{
+      "resume_tech": "X",
+      "job_tech": "Y",
+      "relationship_level": 1-4,
+      "replacement_confidence": <0-100>,
+      "keep_both": true/false
+    }}
+  ],
+  "recruiter_perspective": {{
+    "would_interview": true/false,
+    "strengths": [list of strong points],
+    "concerns": [list of potential concerns],
+    "authenticity_score": <0-100>
+  }},
+  "ats_keywords": [important keywords from job description],
+  "key_highlights": [experience points to emphasize from resume]
 }}
 
 Provide ONLY the JSON output, no additional text.
+Be thoughtful about confidence scores - only rate high if truly believable.
 """
         return prompt
 

@@ -43,7 +43,7 @@ matching:
   min_match_percentage: 60
 
   # Maximum number of jobs to process per day
-  max_jobs_per_day: 10
+  max_jobs_per_day: 5
 
   # Sort by match score
   sort_by_match: true
@@ -107,8 +107,9 @@ resume:
     - "experience"
 
 notifications:
-  # Your email address
-  email_to: "your.email@gmail.com"
+  # Your email address (uses GMAIL_USER from .env)
+  # If not set here, will read from GMAIL_USER environment variable
+  email_to: ""  # Leave empty to use GMAIL_USER from .env
 
   # Send email notifications
   send_email: true
@@ -116,14 +117,13 @@ notifications:
   # Upload to Google Drive
   upload_to_drive: true
 
-  # Google Drive folder ID (get from Drive URL)
-  google_drive_folder_id: "YOUR_FOLDER_ID"
+  # Google Drive folder ID (uses GOOGLE_DRIVE_FOLDER_ID from .env)
+  # Get from Drive URL: https://drive.google.com/drive/folders/[FOLDER_ID_HERE]
+  google_drive_folder_id: ""  # Leave empty to use GOOGLE_DRIVE_FOLDER_ID from .env
 
 sources:
   # Enable/disable job sources
   enabled:
-    - "adzuna"
-    - "jsearch"
     - "linkedin"
     - "indeed"
 
@@ -142,13 +142,14 @@ sources:
     delay_between_requests: 2  # seconds
 
 google_cloud:
-  # Google Cloud Project ID
-  project_id: "YOUR_PROJECT_ID"
+  # Google Cloud Project ID (uses GOOGLE_CLOUD_PROJECT from .env)
+  # Leave empty to use GOOGLE_CLOUD_PROJECT environment variable
+  project_id: ""  # Leave empty to use GOOGLE_CLOUD_PROJECT from .env
 
   # Vertex AI configuration
   vertex_ai:
     location: "us-central1"
-    model: "gemini-2.0-flash-exp"
+    model: "gemini-2.5-flash"
 
   # Firestore collection names
   firestore:

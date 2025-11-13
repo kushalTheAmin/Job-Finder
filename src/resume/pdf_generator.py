@@ -29,8 +29,13 @@ class PDFResumeGenerator:
 
     def _setup_custom_styles(self):
         """Set up custom paragraph styles."""
+        # Helper function to add style only if it doesn't exist
+        def add_style_if_not_exists(style):
+            if style.name not in self.styles:
+                self.styles.add(style)
+
         # Name style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='Name',
             parent=self.styles['Heading1'],
             fontSize=24,
@@ -40,7 +45,7 @@ class PDFResumeGenerator:
         ))
 
         # Title style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='JobTitle',
             parent=self.styles['Normal'],
             fontSize=12,
@@ -50,7 +55,7 @@ class PDFResumeGenerator:
         ))
 
         # Section heading style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='SectionHeading',
             parent=self.styles['Heading2'],
             fontSize=14,
@@ -64,7 +69,7 @@ class PDFResumeGenerator:
         ))
 
         # Company/Position style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='Company',
             parent=self.styles['Normal'],
             fontSize=11,
@@ -74,7 +79,7 @@ class PDFResumeGenerator:
         ))
 
         # Date style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='Date',
             parent=self.styles['Normal'],
             fontSize=9,
@@ -83,7 +88,7 @@ class PDFResumeGenerator:
         ))
 
         # Bullet style
-        self.styles.add(ParagraphStyle(
+        add_style_if_not_exists(ParagraphStyle(
             name='Bullet',
             parent=self.styles['Normal'],
             fontSize=10,

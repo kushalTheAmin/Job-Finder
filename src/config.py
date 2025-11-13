@@ -193,6 +193,16 @@ class Config:
         """Get log file path."""
         return self.config['logging'].get('log_file', 'logs/job_finder.log')
 
+    @property
+    def generate_docx(self) -> bool:
+        """Check if DOCX resume files should be generated."""
+        return self.config.get('resume_customization', {}).get('generate_docx', False)
+
+    @property
+    def generate_modification_files(self) -> bool:
+        """Check if modification instruction files should be generated."""
+        return self.config.get('resume_customization', {}).get('generate_modification_files', True)
+
     def get(self, *keys, default=None):
         """Get nested configuration value."""
         value = self.config

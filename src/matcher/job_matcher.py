@@ -3,6 +3,8 @@
 import logging
 from typing import List, Dict, Any, Tuple
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 from google.cloud import aiplatform
 import vertexai
 from vertexai.generative_models import GenerativeModel
@@ -19,6 +21,11 @@ class JobMatcher:
         self.config = config
         self.resume = resume
         self.min_match_percentage = config.min_match_percentage
+        self.max_jobs_per_day = config.get('matching', 'max_jobs_per_day', default=10)
+        self.max_workers = config.get('matching', 'parallel_workers', default=3)
+
+        # Thread-safe result collection
+        self.match_lock = threading.Lock()
 
         # Initialize Vertex AI
         vertexai.init(
@@ -30,10 +37,92 @@ class JobMatcher:
         logger.info(f"Initialized JobMatcher with {config.vertex_model}")
 
     def match_jobs(self, jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Match jobs with resume and filter by threshold."""
+        """
+        Match jobs with resume in parallel with early stopping.
+        Stops after finding max_jobs_per_day good matches.
+        """
+        if not jobs:
+            return []
+
+        matched_jobs = []
+        processed_count = 0
+        stop_flag = threading.Event()
+
+        logger.info(f"Matching up to {len(jobs)} jobs against resume (parallel workers: {self.max_workers}, target: {self.max_jobs_per_day} matches)...")
+
+        # Use sequential for small job counts
+        if len(jobs) <= 3 or self.max_workers <= 1:
+            return self._match_jobs_sequential(jobs)
+
+        def process_job(job, index):
+            """Process a single job (to be run in parallel)."""
+            # Check if we should stop early
+            if stop_flag.is_set():
+                return None
+
+            try:
+                with self.match_lock:
+                    logger.info(f"Analyzing job {index+1}/{len(jobs)}: {job.get('title', 'Unknown')}")
+
+                # Calculate match score
+                match_score, analysis = self._calculate_match(job)
+
+                # Add match information to job
+                job['match_score'] = match_score
+                job['match_analysis'] = analysis
+
+                # Only include jobs above threshold
+                if match_score >= self.min_match_percentage:
+                    with self.match_lock:
+                        logger.info(f"✓ Match: {match_score}% - {job.get('title')}")
+                    return job
+                else:
+                    with self.match_lock:
+                        logger.info(f"✗ Below threshold: {match_score}% - {job.get('title')}")
+                    return None
+
+            except Exception as e:
+                with self.match_lock:
+                    logger.error(f"Error matching job: {str(e)}")
+                return None
+
+        # Process jobs in parallel
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all jobs to the executor
+            future_to_job = {
+                executor.submit(process_job, job, i): (job, i)
+                for i, job in enumerate(jobs)
+            }
+
+            # Collect results as they complete
+            for future in as_completed(future_to_job):
+                processed_count += 1
+
+                try:
+                    result = future.result()
+                    if result:
+                        matched_jobs.append(result)
+
+                        # Early stopping: stop after finding enough matches
+                        if len(matched_jobs) >= self.max_jobs_per_day:
+                            logger.info(f"✓ Found {self.max_jobs_per_day} matches - stopping early (processed {processed_count}/{len(jobs)} jobs)")
+                            stop_flag.set()
+                            break
+
+                except Exception as e:
+                    logger.error(f"Error processing job result: {str(e)}")
+
+        # Sort by match score (highest first)
+        matched_jobs.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+
+        logger.info(f"Found {len(matched_jobs)} jobs matching threshold of {self.min_match_percentage}% (processed {processed_count}/{len(jobs)} total jobs)")
+        return matched_jobs
+
+    def _match_jobs_sequential(self, jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Fallback sequential matching for small job counts."""
         matched_jobs = []
 
-        logger.info(f"Matching {len(jobs)} jobs against resume...")
+        logger.info(f"Matching {len(jobs)} jobs sequentially...")
 
         for i, job in enumerate(jobs):
             try:
@@ -50,6 +139,11 @@ class JobMatcher:
                 if match_score >= self.min_match_percentage:
                     matched_jobs.append(job)
                     logger.info(f"✓ Match: {match_score}% - {job.get('title')}")
+
+                    # Early stopping
+                    if len(matched_jobs) >= self.max_jobs_per_day:
+                        logger.info(f"✓ Found {self.max_jobs_per_day} matches - stopping early")
+                        break
                 else:
                     logger.info(f"✗ Below threshold: {match_score}% - {job.get('title')}")
 
@@ -60,7 +154,7 @@ class JobMatcher:
         # Sort by match score (highest first)
         matched_jobs.sort(key=lambda x: x.get('match_score', 0), reverse=True)
 
-        logger.info(f"Found {len(matched_jobs)} jobs matching threshold of {self.min_match_percentage}%")
+        logger.info(f"Found {len(matched_jobs)} jobs matching threshold")
         return matched_jobs
 
     def _calculate_match(self, job: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:

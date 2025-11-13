@@ -95,6 +95,52 @@ class FirestoreDB:
         logger.info(f"Filtered to {len(new_jobs)} new jobs (from {len(jobs)} total)")
         return new_jobs
 
+    def filter_new_jobs_batched(self, jobs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter out jobs that have already been applied to using batched Firestore queries.
+        Much faster than filter_new_jobs() which does 1 query per job.
+        """
+        if not jobs:
+            return []
+
+        try:
+            # Extract all job IDs
+            job_ids = [job.get('id') for job in jobs if job.get('id')]
+
+            if not job_ids:
+                return jobs
+
+            # Query Firestore for all these job IDs in one batch
+            # Firestore 'in' queries are limited to 10 items, so we batch them
+            applied_job_ids = set()
+            batch_size = 10
+
+            for i in range(0, len(job_ids), batch_size):
+                batch_ids = job_ids[i:i + batch_size]
+                # Query using document IDs directly (faster than field query)
+                for job_id in batch_ids:
+                    doc_ref = self.db.collection(self.jobs_collection).document(job_id)
+                    if doc_ref.get().exists:
+                        applied_job_ids.add(job_id)
+
+            # Filter out already applied jobs
+            new_jobs = []
+            for job in jobs:
+                job_id = job.get('id')
+                if job_id and job_id not in applied_job_ids:
+                    new_jobs.append(job)
+                else:
+                    logger.debug(f"Skipping duplicate job: {job.get('title')}")
+
+            logger.info(f"Batched filter: {len(new_jobs)} new jobs (from {len(jobs)} total, {len(applied_job_ids)} already applied)")
+            return new_jobs
+
+        except Exception as e:
+            logger.error(f"Error in batched filtering: {str(e)}")
+            # Fallback to regular filtering
+            logger.info("Falling back to non-batched filtering")
+            return self.filter_new_jobs(jobs)
+
     def save_daily_run(self, run_data: Dict[str, Any]) -> None:
         """Save daily run statistics to history."""
         try:

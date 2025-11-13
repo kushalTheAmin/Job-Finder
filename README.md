@@ -2,6 +2,14 @@
 
 **Your personal AI assistant that finds matching jobs and creates custom resumes automatically - every single day!**
 
+## 📚 Documentation
+
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Complete step-by-step setup guide (start here!)
+- **[FEATURES.md](FEATURES.md)** - Detailed feature explanations and configuration
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and project structure
+- **[COPILOT_GUIDE.md](COPILOT_GUIDE.md)** - Guide for AI coding assistants
+- **[tools/README.md](tools/README.md)** - Resume converter tool documentation
+
 ## What Does This Do?
 
 Imagine waking up every morning to an email with:
@@ -160,11 +168,12 @@ cd Job-Finder-
 # 2. Install Python packages
 pip install -r requirements.txt
 
-# 3. Copy the example environment file
-cp .env.example .env
+# 3. Copy the template environment file
+cp .env.template .env
 
 # 4. Edit .env with your API keys
 # Use any text editor to fill in your keys
+# See .env.template for detailed instructions on getting each key
 
 # 5. Edit config.yaml with your preferences
 # Set your job titles, locations, etc.

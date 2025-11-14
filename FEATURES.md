@@ -11,7 +11,7 @@ This document provides detailed explanations of all Job Finder features, how the
 3. [Intelligent Job Matching](#3-intelligent-job-matching)
 4. [Smart Resume Customization](#4-smart-resume-customization)
 5. [Interview Preparation Generator](#5-interview-preparation-generator)
-6. [PDF & Document Generation](#6-pdf--document-generation)
+6. [Document Generation](#6-document-generation)
 7. [Email Notifications](#7-email-notifications)
 8. [Duplicate Detection & Storage](#8-duplicate-detection--storage)
 9. [Google Drive Integration](#9-google-drive-integration)
@@ -21,16 +21,16 @@ This document provides detailed explanations of all Job Finder features, how the
 
 ## 1. Resume Converter Tool
 
-**Location**: `tools/resume_converter.py`
+**Location**: `tools/ai_resume_converter.py`
 **Purpose**: Convert your existing resume (PDF/DOCX/TXT) into the JSON format required by Job Finder
 
 ### How It Works
 
-The resume converter is an interactive tool that:
-1. Accepts multiple input formats (PDF, DOCX, TXT, or paste)
-2. Uses AI (Vertex AI Gemini 2.0 Flash) to intelligently parse your resume
+The resume converter is an AI-powered tool that:
+1. Accepts multiple input formats (PDF, DOCX, TXT)
+2. Uses Google Gemini API to intelligently parse your resume
 3. Extracts and structures all information into JSON
-4. Validates the output
+4. AI validates and fixes its own output automatically
 5. Saves to `data/master_resume.json`
 
 ### Two Conversion Methods
@@ -106,13 +106,16 @@ The resume converter is an interactive tool that:
 ### Usage
 
 ```bash
-# Install dependencies
-pip install PyPDF2 python-docx google-cloud-aiplatform
+# Install local dependencies (one-time)
+pip install -r requirements-local.txt
+
+# Add your free Gemini API key to .env
+# Get it from: https://ai.google.dev/
 
 # Run converter
-python tools/resume_converter.py
+python tools/ai_resume_converter.py
 
-# Follow prompts
+# Follow prompts - AI will validate and fix automatically!
 ```
 
 ### When to Use
@@ -122,19 +125,15 @@ python tools/resume_converter.py
 - **Testing**: To understand the expected JSON format
 - **Migration**: When moving from another resume format
 
-### Configuration
+### AI Self-Validation
 
-Edit the converter settings in the script:
-```python
-# AI model to use
-MODEL = "gemini-2.0-flash-exp"
+The converter uses a 3-attempt validation loop:
+1. AI converts your resume to JSON
+2. AI validates its own output
+3. If issues found, AI fixes them automatically
+4. Repeats up to 3 times for perfect results
 
-# Output path
-OUTPUT_PATH = "data/master_resume.json"
-
-# Validation rules
-REQUIRED_FIELDS = ["personal_info", "skills", "experience"]
-```
+No manual validation needed - the AI checks and corrects itself!
 
 ---
 
@@ -638,7 +637,7 @@ Based on confidence levels:
 
 ```
 output/
-├── TechCorp_Senior_Engineer_resume.pdf
+├── TechCorp_Senior_Engineer_resume.docx
 ├── TechCorp_Senior_Engineer_prep_guide.md
 └── TechCorp_Senior_Engineer_modifications.json
 ```
@@ -660,92 +659,63 @@ resume_customization:
 
 ---
 
-## 6. PDF & Document Generation
+## 6. Document Generation
 
-**Locations**:
-- `src/resume/pdf_generator.py` - PDF generation
-- `src/resume/doc_generator.py` - DOCX generation
-
-### PDF Generation
-
-Uses **WeasyPrint** for professional, ATS-friendly PDFs.
-
-#### Features
-- Clean, modern design
-- ATS-friendly formatting (no columns, tables, images)
-- Proper font sizing and spacing
-- Section hierarchy
-- Bullet point formatting
-- Page breaks handled intelligently
-
-#### Template
-
-```html
-<div class="resume">
-  <header>
-    <h1>{name}</h1>
-    <h2>{title}</h2>
-    <div class="contact">{email} | {phone} | {location}</div>
-  </header>
-
-  <section class="summary">
-    <h3>Professional Summary</h3>
-    <p>{summary}</p>
-  </section>
-
-  <section class="skills">
-    <h3>Technical Skills</h3>
-    <ul>
-      {skills by category}
-    </ul>
-  </section>
-
-  <section class="experience">
-    <h3>Professional Experience</h3>
-    {for each job...}
-  </section>
-
-  ...
-</div>
-```
+**Location**: `src/resume/doc_generator.py`
 
 ### DOCX Generation
 
-Uses **python-docx** for editable Word documents.
+Uses **python-docx** to generate ATS-optimized Word documents.
+
+#### Why DOCX Only?
+
+- **Best ATS compatibility**: ATS systems parse DOCX more reliably than PDF
+- **Recruiter-friendly**: Easily editable by recruiters
+- **Standard format**: Universally accepted for job applications
+- **Preserves structure**: Maintains formatting across all systems
+- **No rendering issues**: Text-based format ensures consistency
 
 #### Features
-- Fully editable format
-- Standard formatting
-- Compatible with all ATS systems
-- Easy for recruiters to modify
-- Maintains structure and styling
 
-#### Why Both Formats?
+- Clean, professional design
+- ATS-friendly formatting (no columns, tables, images)
+- Proper spacing (Pt(0), line_spacing=1.0)
+- Standard margins (0.5-0.7 inches)
+- Semantic structure (header, sections, bullets)
+- Single paragraphs with line breaks for perfect spacing
 
-- **PDF**: For email attachments and printing (most common)
-- **DOCX**: For ATS submission and recruiter editing
+#### Spacing Style Guide
+
+The generator uses strict spacing rules for professional appearance:
+```python
+# All paragraphs use:
+paragraph.space_after = Pt(0)  # No extra spacing
+paragraph.line_spacing = 1.0   # Single spacing
+
+# Use ONE paragraph with \n line breaks
+# NOT multiple paragraphs (prevents extra spacing)
+header_para.add_run(name)
+header_para.add_run('\n')  # Line break
+header_para.add_run(contact_info)
+```
 
 ### File Naming
 
 ```
-{Company}_{Position}_{Date}_resume.pdf
 {Company}_{Position}_{Date}_resume.docx
 
 Examples:
-TechCorp_Senior_Engineer_20251113_resume.pdf
+TechCorp_Senior_Engineer_20251113_resume.docx
 Startup_Lead_Developer_20251113_resume.docx
 ```
 
-### Configuration
+### What Happened to PDF?
 
-```yaml
-resume:
-  # Output format(s)
-  output_format: "pdf"  # pdf, docx, or both
-
-  # Generate DOCX in addition to PDF?
-  generate_docx: true
-```
+PDF generation was removed in favor of DOCX-only approach:
+- Better ATS parsing accuracy
+- Easier for recruiters to customize
+- More reliable formatting
+- Can convert to PDF anytime if needed
 
 ---
 
@@ -782,7 +752,7 @@ resume:
    - "Apply Now" button
 
 3. **Attachments**
-   - Customized PDF resume for each job
+   - Customized DOCX resume for each job
    - Interview prep guide (markdown)
    - Modification report (JSON)
 
@@ -825,7 +795,7 @@ resume:
       </div>
 
       <div class="attachments">
-        <p>📄 Customized resume attached</p>
+        <p>📄 Customized DOCX resume attached</p>
         <p>📚 Interview prep guide attached</p>
       </div>
 
@@ -940,9 +910,9 @@ def is_duplicate(job):
 ```
 Job Finder Resumes/
 ├── 2025-11-13/
-│   ├── TechCorp_Senior_Engineer_resume.pdf
+│   ├── TechCorp_Senior_Engineer_resume.docx
 │   ├── TechCorp_Senior_Engineer_prep.md
-│   ├── Startup_Lead_Dev_resume.pdf
+│   ├── Startup_Lead_Dev_resume.docx
 │   └── Startup_Lead_Dev_prep.md
 ├── 2025-11-12/
 │   └── ...

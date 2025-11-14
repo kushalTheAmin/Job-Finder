@@ -11,7 +11,7 @@ When working with an AI assistant on this project, use these phrases to referenc
 | User Says | AI Should Reference |
 |-----------|---------------------|
 | "Help me set up Job Finder" | [SETUP_GUIDE.md](SETUP_GUIDE.md) |
-| "Convert my resume" | [tools/README.md](tools/README.md) + `tools/resume_converter.py` |
+| "Convert my resume" | [tools/README.md](tools/README.md) + `tools/ai_resume_converter.py` |
 | "Configure job search" | `config.yaml` + [FEATURES.md](FEATURES.md#10-configuration-system) |
 | "How does matching work?" | [FEATURES.md](FEATURES.md#3-intelligent-job-matching) |
 | "Customize resume settings" | [FEATURES.md](FEATURES.md#4-smart-resume-customization) |
@@ -59,12 +59,11 @@ src/
 │   └── job_matcher.py     # AI-powered job matching
 │
 ├── resume/
-│   ├── smart_customizer.py    # Story-based customizer (NEW)
+│   ├── smart_customizer.py    # Story-based customizer
 │   ├── story_builder.py       # Story templates
 │   ├── ats_optimizer.py       # ATS optimization
 │   ├── interview_prep.py      # Prep guide generator
-│   ├── pdf_generator.py       # PDF generation
-│   ├── doc_generator.py       # DOCX generation
+│   ├── doc_generator.py       # DOCX generation (ATS-optimized)
 │   ├── resume_modifier.py     # Applies modifications
 │   └── resume_validator.py    # Validates changes
 │
@@ -80,8 +79,8 @@ src/
 
 ```
 tools/
-├── resume_converter.py    # Convert PDF/DOCX → JSON (IMPORTANT!)
-└── README.md              # Converter documentation
+├── ai_resume_converter.py    # AI-powered PDF/DOCX → JSON converter (IMPORTANT!)
+└── README.md                  # Converter documentation
 
 tests/
 ├── test_simple.py
@@ -107,20 +106,25 @@ deploy/
 ### Initial Setup
 
 ```bash
-# 1. Convert resume to JSON (FIRST STEP!)
-python tools/resume_converter.py
+# 1. Get FREE Gemini API key from https://ai.google.dev/
 
-# 2. Copy environment template
+# 2. Install local dependencies
+pip install -r requirements-local.txt
+
+# 3. Copy environment template and add API key
 cp .env.template .env
-# Then edit .env with your API keys
+# Edit .env and add: GEMINI_API_KEY=your-key-here
 
-# 3. Install dependencies
+# 4. Convert resume to JSON (FIRST STEP!)
+python tools/ai_resume_converter.py
+
+# 5. Install cloud dependencies
 pip install -r requirements.txt
 
-# 4. Test locally
+# 6. Test locally
 python main.py
 
-# 5. Deploy to cloud
+# 7. Deploy to cloud
 cd deploy && ./deploy.sh
 ```
 
@@ -177,10 +181,13 @@ When helping users with Job Finder:
 ```markdown
 First, let's convert your resume to JSON format:
 
-1. Run: `python tools/resume_converter.py`
-2. Follow the prompts to upload your PDF/DOCX or paste text
-3. Choose "AI-Powered" conversion (recommended)
-4. The tool will save to `data/master_resume.json`
+1. Get a FREE Gemini API key from https://ai.google.dev/
+2. Add it to your .env file: GEMINI_API_KEY=your-key-here
+3. Install local dependencies: pip install -r requirements-local.txt
+4. Run: `python tools/ai_resume_converter.py`
+5. Follow the prompts to provide your PDF/DOCX file path
+6. The AI will convert, validate, and fix automatically
+7. The tool will save to `data/master_resume.json`
 
 This file is required for the system to work.
 ```
@@ -366,7 +373,7 @@ Edit `data/master_resume.json`:
 }
 ```
 
-OR use the converter again: `python tools/resume_converter.py`
+OR use the converter again: `python tools/ai_resume_converter.py`
 ```
 
 ### "Email isn't sending"
@@ -516,7 +523,18 @@ functions-framework --target=main --debug
 
 ## Dependencies Reference
 
-### Local Development
+### Local Development (Resume Converter)
+```bash
+pip install -r requirements-local.txt
+```
+
+Key packages:
+- `google-generativeai` - Gemini API (for resume conversion)
+- `PyPDF2` - PDF reading
+- `python-docx` - DOCX reading
+- `python-dotenv` - Environment variables
+
+### Cloud Development (Daily Job Finder)
 ```bash
 pip install -r requirements.txt
 ```
@@ -525,9 +543,7 @@ Key packages:
 - `google-cloud-aiplatform` - Vertex AI
 - `google-cloud-firestore` - Database
 - `google-cloud-storage` - File storage
-- `WeasyPrint` - PDF generation
-- `python-docx` - DOCX generation
-- `PyPDF2` - PDF reading
+- `python-docx` - DOCX generation (ATS-optimized)
 - `requests` - HTTP client
 - `beautifulsoup4` - HTML parsing
 
@@ -581,16 +597,29 @@ I'll help you set up Job Finder! Let's start with the most important step:
 
 ### Step 1: Convert Your Resume (Required!)
 
-Run the resume converter tool:
+First, get a FREE Gemini API key:
+1. Go to https://ai.google.dev/
+2. Click "Get API Key"
+3. Copy the key
+
+Then run the AI resume converter:
 ```bash
-python tools/resume_converter.py
+# Install local dependencies
+pip install -r requirements-local.txt
+
+# Add API key to .env
+cp .env.template .env
+# Edit .env and add: GEMINI_API_KEY=your-key-here
+
+# Run converter
+python tools/ai_resume_converter.py
 ```
 
 This converts your PDF/DOCX resume to the required JSON format.
-Follow the prompts, choose "AI-Powered" conversion, and it will save to
+The AI will validate and fix any issues automatically, saving to
 `data/master_resume.json`.
 
-Once that's done, we'll move to API keys and configuration.
+Once that's done, we'll move to other API keys and cloud configuration.
 
 For the complete setup process, see: [SETUP_GUIDE.md](SETUP_GUIDE.md)
 ```
@@ -640,7 +669,7 @@ When helping users with Job Finder:
 
 **Most Common User Needs**:
 1. Initial setup → [SETUP_GUIDE.md](SETUP_GUIDE.md)
-2. Resume conversion → `python tools/resume_converter.py`
+2. Resume conversion → `python tools/ai_resume_converter.py`
 3. Change job search → Edit `config.yaml`
 4. Troubleshooting → Check logs + [SETUP_GUIDE.md#troubleshooting](SETUP_GUIDE.md#troubleshooting)
 5. Add features → [ARCHITECTURE.md](ARCHITECTURE.md) + source code

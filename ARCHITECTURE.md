@@ -93,8 +93,7 @@ Job Finder is a **serverless, AI-powered job search automation system** built on
 │                              ↓                                    │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │          6. GENERATE DOCUMENTS                            │  │
-│  │  • PDF resumes (WeasyPrint)                               │  │
-│  │  • DOCX resumes (python-docx)                             │  │
+│  │  • DOCX resumes (python-docx) - ATS-optimized            │  │
 │  │  • Interview prep guides (Markdown)                       │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                              ↓                                    │

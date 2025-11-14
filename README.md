@@ -113,7 +113,7 @@ The system now includes a powerful 5-stage optimization pipeline that consistent
 - Beautiful HTML emails with job details
 - Match percentages for each job
 - Why you're a great fit for each position
-- Resumes attached as PDFs
+- Resumes attached as DOCX files (ATS-friendly!)
 
 ### ☁️ Cloud Storage
 - Automatically uploads to Google Drive
@@ -137,36 +137,39 @@ The system now includes a powerful 5-stage optimization pipeline that consistent
 
 ## Quick Start (For Beginners)
 
+**⚡ New! Simple 15-minute setup - See [QUICKSTART.md](QUICKSTART.md)**
+
 ### What You Need
 
-1. **A Google Cloud account** (free tier is fine!)
-2. **Gmail account** (for sending emails)
-3. **Your resume** in JSON format (we'll help you convert it)
-4. **30 minutes** to set everything up
+1. **Your resume** (PDF, DOCX, or TXT file)
+2. **Free Gemini API key** (get from https://ai.google.dev/)
+3. **Google Cloud account** for deployment (free tier works!)
+4. **Gmail account** (for email notifications)
 
-### Step 1: Get Your Master Resume Ready
+### Step 1: Convert Your Resume to JSON (5 minutes - LOCAL)
 
-Your resume needs to be in JSON format. We've included a sample in `data/master_resume.json`.
-
-**Option A**: Edit the sample file with your info
-
-**Option B**: Use our converter tool - converts PDF/DOCX/TXT to JSON automatically!
+Your resume needs to be in JSON format. Our AI converter does this automatically!
 
 ```bash
-# Install converter dependencies
-pip install PyPDF2 python-docx
+# 1. Get FREE Gemini API key from https://ai.google.dev/
+# 2. Install local dependencies
+pip install -r requirements-local.txt
 
-# Run the interactive converter
-python tools/resume_converter.py
+# 3. Add API key to .env file
+cp .env.template .env
+# Edit .env and add: GEMINI_API_KEY=your-key-here
 
-# It will:
-# 1. Ask for your resume (PDF, DOCX, TXT, or paste text)
-# 2. Extract the text
-# 3. Convert to JSON using AI (or provide a template)
+# 4. Run AI converter
+python tools/ai_resume_converter.py
+
+# The AI will:
+# 1. Read your PDF/DOCX resume
+# 2. Convert to structured JSON
+# 3. Validate and fix any issues (automatically!)
 # 4. Save to data/master_resume.json
 ```
 
-See `tools/README.md` for detailed converter documentation.
+**That's it for local setup!** See [tools/README.md](tools/README.md) for detailed converter guide.
 
 ### Step 2: Get API Keys (All Free!)
 

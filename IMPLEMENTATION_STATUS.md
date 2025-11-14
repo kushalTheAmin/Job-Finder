@@ -1,7 +1,20 @@
 # Job Finder Enhancement - Implementation Status
 
+> **⚠️ NOTE**: This implementation log is from a previous development session (2025-01-12) that explored PDF generation using WeasyPrint and AI HTML generation. **This approach was not adopted.**
+>
+> **Current System**: Job Finder now uses a **DOCX-only approach** for better ATS compatibility. See the latest implementation:
+> - **Resume Conversion**: `tools/ai_resume_converter.py` (AI-powered PDF/DOCX → JSON)
+> - **Resume Generation**: `src/resume/doc_generator.py` (JSON → DOCX only)
+> - **No PDF generation** - DOCX is the standard format for ATS systems
+>
+> This file is preserved for historical reference only.
+
+---
+
+# ARCHIVED SESSION - 2025-01-12
+
 **Session Date**: 2025-01-12
-**Status**: 4/12 Core Features Complete (33%)
+**Status**: 4/12 Core Features Complete (33%) - NOT IMPLEMENTED
 **Token Usage**: 124k/200k (62%)
 
 ---

@@ -49,34 +49,59 @@ Before you begin, make sure you have:
 
 ## Part 1: Convert Your Resume (MOST IMPORTANT!)
 
-**⏱️ Time**: 15 minutes
+**⏱️ Time**: 10 minutes
 
-Your resume needs to be in JSON format for the system to work. We've created a powerful converter tool to make this easy!
+Your resume needs to be in JSON format for the system to work. We've created a powerful AI converter tool to make this easy!
 
 ### Why This Step is First
 
-The resume converter is the **gateway tool** for this entire system. Without your resume in the correct JSON format, nothing else will work. This tool uses AI to intelligently parse your resume and create the structured data needed.
+The resume converter is the **gateway tool** for this entire system. Without your resume in the correct JSON format, nothing else will work. This tool uses Google's Gemini AI to intelligently parse your resume and create the structured data needed.
 
-### Step 1.1: Install Converter Dependencies
+### Step 1.1: Get Free Gemini API Key
+
+```bash
+# 1. Go to: https://ai.google.dev/
+# 2. Click "Get API Key"
+# 3. Click "Create API Key in new project"
+# 4. Copy the key (starts with AIzaSy...)
+```
+
+### Step 1.2: Install Converter Dependencies
 
 ```bash
 # Navigate to your project directory
-cd Job-Finder-
+cd Job-Finder
 
-# Install the required packages
-pip install PyPDF2 python-docx google-cloud-aiplatform
+# Install local dependencies
+pip install -r requirements-local.txt
 ```
 
-### Step 1.2: Run the Resume Converter
+This installs:
+- `google-generativeai` - Google AI SDK for Gemini
+- `PyPDF2` - PDF reader
+- `python-docx` - DOCX reader
+- Other utilities
+
+### Step 1.3: Configure API Key
 
 ```bash
-# Run the interactive converter
-python tools/resume_converter.py
+# Copy environment template
+cp .env.template .env
+
+# Open .env file and add your Gemini API key:
+# GEMINI_API_KEY=AIzaSy...your-actual-key-here
 ```
 
-### Step 1.3: Follow the Interactive Prompts
+### Step 1.4: Run the AI Resume Converter
 
-The converter will guide you through:
+```bash
+# Run the converter
+python tools/ai_resume_converter.py
+```
+
+### Step 1.5: Follow the Interactive Prompts
+
+The AI converter will:
 
 1. **Choose Input Method**:
    - PDF file

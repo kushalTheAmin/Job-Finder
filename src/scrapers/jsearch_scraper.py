@@ -15,9 +15,13 @@ class JSearchScraper(BaseScraper):
         """Initialize JSearch scraper."""
         super().__init__(config)
         self.api_key = config.get('sources', 'jsearch', 'api_key')
+        self.has_details_endpoint = None  # Will verify on first use
 
         if not self.api_key:
             self.logger.warning("JSearch API key not configured")
+        else:
+            # Verify endpoint availability on initialization
+            self._verify_details_endpoint()
 
     def search(self, title: str, location: str, **kwargs) -> List[Dict[str, Any]]:
         """Search for jobs using JSearch API."""
@@ -123,14 +127,61 @@ class JSearchScraper(BaseScraper):
 
         return jobs
 
+    def _verify_details_endpoint(self):
+        """
+        Verify if JSearch /job-details endpoint exists and is accessible.
+
+        Sets self.has_details_endpoint to True/False based on availability.
+        If endpoint doesn't exist or returns errors, we'll use search descriptions only.
+        """
+        if not self.api_key:
+            self.has_details_endpoint = False
+            return
+
+        try:
+            url = "https://jsearch.p.rapidapi.com/job-details"
+            headers = {
+                'X-RapidAPI-Key': self.api_key,
+                'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+            }
+            # Use a test job_id - endpoint should return 400 (bad job_id) not 404 (not found)
+            params = {'job_id': 'test_verification'}
+
+            self.logger.debug("Verifying JSearch /job-details endpoint availability...")
+
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+
+            # 404 = endpoint doesn't exist
+            # 400 = endpoint exists but bad job_id (expected)
+            # 200 = endpoint exists and working
+            if response.status_code == 404:
+                self.has_details_endpoint = False
+                self.logger.warning("⚠️ JSearch /job-details endpoint NOT available (404) - will use search descriptions only")
+            elif response.status_code in [400, 200]:
+                self.has_details_endpoint = True
+                self.logger.info("✓ JSearch /job-details endpoint available")
+            else:
+                # Other errors - assume endpoint might not be available
+                self.has_details_endpoint = False
+                self.logger.warning(f"⚠️ JSearch /job-details endpoint verification unclear (HTTP {response.status_code}) - will use search descriptions only")
+
+        except Exception as e:
+            self.has_details_endpoint = False
+            self.logger.warning(f"⚠️ Could not verify JSearch /job-details endpoint: {str(e)} - will use search descriptions only")
+
     def _fetch_job_details(self, job_id: str, job_title: str) -> str:
         """
         Fetch full job details from JSearch /job-details endpoint.
 
         The search endpoint may return shorter descriptions, while the
         job-details endpoint provides complete job postings.
+        Note: Endpoint availability verified at initialization.
         """
         if not job_id or not self.api_key:
+            return ""
+
+        # Skip if endpoint not available
+        if self.has_details_endpoint is False:
             return ""
 
         try:
@@ -157,8 +208,16 @@ class JSearchScraper(BaseScraper):
 
             return ""
 
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                # Endpoint doesn't exist, mark it for future calls
+                self.has_details_endpoint = False
+                self.logger.warning(f"⚠️ JSearch /job-details endpoint not found (404) - disabling for future calls")
+            else:
+                self.logger.warning(f"✗ HTTP error fetching details for {job_title}: {str(e)}")
+            return ""
         except Exception as e:
-            self.logger.debug(f"Could not fetch details for {job_title}: {str(e)}")
+            self.logger.warning(f"✗ Could not fetch details for {job_title}: {str(e)}")
             return ""
 
     def _format_location(self, result: Dict[str, Any]) -> str:

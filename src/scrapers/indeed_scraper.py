@@ -184,6 +184,7 @@ class IndeedScraper(BaseScraper):
 
         Search results only show snippets (~20-50 words), but the viewjob
         endpoint contains the full job description.
+        Note: Indeed has aggressive anti-scraping - success rate may be 30-50%.
         """
         if not job_id:
             return ""
@@ -193,9 +194,12 @@ class IndeedScraper(BaseScraper):
             url = f"https://www.indeed.com/viewjob?viewtype=embedded&jk={job_id}"
 
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Referer': 'https://www.indeed.com/jobs',
+                'Connection': 'keep-alive',
             }
 
             self.logger.debug(f"Fetching full description for job ID: {job_id}")
@@ -203,32 +207,56 @@ class IndeedScraper(BaseScraper):
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-
-            # Indeed's job description is typically in #jobDescriptionText
-            desc_elem = soup.find('div', {'id': 'jobDescriptionText'})
-
-            if not desc_elem:
-                # Fallback selectors
-                desc_elem = soup.find('div', class_=re.compile(r'jobsearch-jobDescriptionText'))
-
-            if desc_elem:
-                description = desc_elem.get_text(separator='\n', strip=True)
-                if description and len(description) > 100:
-                    word_count = len(description.split())
-                    self.logger.info(f"✓ Got full description ({word_count} words) for: {job_title}")
-
-                    # Rate limiting: delay after successful fetch
-                    time.sleep(1)
-
-                    return description
-                else:
-                    self.logger.warning(f"✗ Description too short for: {job_title}")
-                    return ""
-            else:
-                self.logger.warning(f"✗ Could not find description element for: {job_title}")
+            # Check for blocking/captcha pages
+            response_text = response.text.lower()
+            if 'captcha' in response_text or 'blocked' in response_text or 'access denied' in response_text:
+                self.logger.warning(f"✗ Indeed blocking detected for job {job_id} (captcha/blocked)")
                 return ""
 
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Try multiple selectors (Indeed changes these frequently)
+            description = None
+            selectors = [
+                ('div', {'id': 'jobDescriptionText'}),
+                ('div', {'class': re.compile(r'jobsearch-jobDescriptionText')}),
+                ('div', {'class': re.compile(r'jobsearch-JobComponent-description')}),
+                ('div', {'data-testid': 'jobDescriptionText'}),
+                ('section', {'class': re.compile(r'jobDescriptionSection')}),
+            ]
+
+            for tag, attrs in selectors:
+                if isinstance(attrs, dict) and 'id' in attrs:
+                    desc_elem = soup.find(tag, attrs)
+                elif isinstance(attrs, dict) and 'data-testid' in attrs:
+                    desc_elem = soup.find(tag, attrs)
+                else:
+                    desc_elem = soup.find(tag, attrs)
+
+                if desc_elem:
+                    description = desc_elem.get_text(separator='\n', strip=True)
+                    if len(description) > 100:
+                        self.logger.debug(f"Found description using selector: {tag}")
+                        break
+
+            if description and len(description) > 100:
+                word_count = len(description.split())
+                self.logger.info(f"✓ Got full description ({word_count} words) for: {job_title}")
+
+                # Rate limiting: delay after successful fetch
+                time.sleep(1)
+
+                return description
+            else:
+                self.logger.warning(f"✗ Could not extract description for: {job_title} (no content found)")
+                return ""
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 403 or e.response.status_code == 429:
+                self.logger.warning(f"✗ Indeed blocking/rate limiting for job {job_id} (HTTP {e.response.status_code})")
+            else:
+                self.logger.warning(f"✗ HTTP error fetching job {job_id}: {str(e)}")
+            return ""
         except Exception as e:
             self.logger.warning(f"✗ Error fetching job {job_id}: {str(e)}")
             return ""

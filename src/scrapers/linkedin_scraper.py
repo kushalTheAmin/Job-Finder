@@ -153,24 +153,65 @@ class LinkedInScraper(BaseScraper):
     def get_job_details(self, job_url: str) -> Dict[str, Any]:
         """
         Get detailed job description from job URL.
-        Note: This is optional and may require authentication for some jobs.
+        Note: LinkedIn often requires authentication - success rate may be 20-40%.
         """
         try:
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Referer': 'https://www.linkedin.com/jobs/search',
             }
 
             response = requests.get(job_url, headers=headers, timeout=30)
             response.raise_for_status()
 
+            # Check if we got redirected to login/authwall page
+            if 'authwall' in response.url or 'login' in response.url or '/uas/login' in response.url:
+                self.logger.warning("LinkedIn requires authentication for this job (authwall detected)")
+                return {}
+
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Find job description
-            desc_elem = soup.find('div', class_='show-more-less-html__markup')
-            description = desc_elem.text.strip() if desc_elem else ''
+            # Try multiple selectors (LinkedIn changes these frequently)
+            description = None
+            selectors = [
+                ('div', {'class': 'show-more-less-html__markup'}),
+                ('div', {'class': 'description__text'}),
+                ('section', {'class': 'description'}),
+                ('div', {'class': 'jobs-description'}),
+                ('div', {'class': 'jobs-description__content'}),
+                ('article', {'class': 'jobs-description__container'}),
+            ]
 
-            return {'description': self._clean_description(description)}
+            for tag, attrs in selectors:
+                desc_elem = soup.find(tag, attrs)
+                if desc_elem:
+                    description = desc_elem.get_text(separator='\n', strip=True)
+                    if len(description) > 100:  # Ensure we got real content, not just headers
+                        self.logger.debug(f"Found description using selector: {tag}.{attrs}")
+                        break
+
+            # Fallback: Find largest text block if selectors fail
+            if not description or len(description) < 100:
+                self.logger.debug("Selectors failed, trying fallback: largest text block")
+                all_divs = soup.find_all('div')
+                texts = [(div.get_text(separator='\n', strip=True), div) for div in all_divs]
+                texts.sort(key=lambda x: len(x[0]), reverse=True)
+
+                # Get the largest text block that looks like a job description (> 200 chars)
+                for text, div in texts[:5]:  # Check top 5 largest
+                    if len(text) > 200 and 'responsibilities' in text.lower() or 'requirements' in text.lower() or 'experience' in text.lower():
+                        description = text
+                        self.logger.debug(f"Found description using fallback ({len(text)} chars)")
+                        break
+
+            if description and len(description) > 100:
+                return {'description': self._clean_description(description)}
+            else:
+                self.logger.warning("Could not extract job description (no content found)")
+                return {}
 
         except Exception as e:
-            self.logger.debug(f"Could not get job details: {str(e)}")
+            self.logger.warning(f"Could not get job details: {str(e)}")
             return {}

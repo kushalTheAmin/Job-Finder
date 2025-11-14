@@ -108,13 +108,18 @@ ANALYZE:
 
 1. Job Role Analysis:
    - Primary Role Type: [Backend Engineer/Frontend Engineer/Full-Stack/Data Engineer/DevOps/ML Engineer/Mobile/etc]
+   - Domain/Industry Focus: [Market Intelligence/E-commerce/Fintech/Healthcare/Analytics/Automotive/etc]
+   - Business Context: [What business problem does this role solve? e.g., "data-driven decision making", "customer-facing analytics"]
    - Primary Tech Focus: [Main 3-5 technologies the job emphasizes]
    - Secondary Tech Focus: [Supporting technologies]
+   - Key Value Propositions: [Top 3 value statements from job - e.g., "innovation", "AI-first", "scale"]
    - Key Responsibilities: [Top 3 responsibilities]
    - Seniority Level: [Junior/Mid/Senior/Staff/Principal]
 
 2. Resume Role Analysis:
    - Current Role Type: [What role does this resume primarily showcase?]
+   - Domain/Industry Focus: [What domain does the resume emphasize? e.g., "automotive analytics", "financial services"]
+   - Business Context: [What business value does the resume emphasize? e.g., "performance optimization", "user engagement"]
    - Primary Tech Focus: [What 3-5 technologies does the resume emphasize most?]
    - Secondary Tech Focus: [What's mentioned but not emphasized?]
    - Key Strengths: [Top 3 areas candidate shows depth in]
@@ -122,38 +127,45 @@ ANALYZE:
 
 3. Mismatch Detection:
    - Is there a role type mismatch? [Yes/No]
+   - Is there a domain/focus mismatch? [Yes/No - e.g., automotive analytics resume vs market intelligence job]
+   - Is there a business value mismatch? [Yes/No - e.g., resume emphasizes UI/UX but job emphasizes data processing]
    - Severity: [CRITICAL/MODERATE/MINOR/NONE]
-   - Primary Gap: [What's the main disconnect? Be specific]
+   - Primary Gap: [What's the main disconnect? Be specific - include domain and business context, not just tech]
    - Secondary Gaps: [What else doesn't align?]
-   - Hidden Strengths: [What relevant experience exists but is buried/de-emphasized?]
+   - Hidden Strengths: [What relevant experience exists but is buried/de-emphasized? Look for transferable skills in wrong context]
 
 4. Repositioning Strategy (if mismatch exists):
 
    A. Narrative Reframe:
    - How should we reposition this candidate's story?
    - What angle highlights their fit for THIS specific role?
-   - Example: "Reposition as backend-focused full-stack engineer who happens to know React, not React specialist who does some backend"
+   - What domain/business context shift is needed? (e.g., from "automotive analytics" to "market intelligence")
+   - Example: "Reposition as data-driven full-stack engineer building market intelligence platforms, not just automotive dashboards"
 
-   B. Emphasize (expand, move up, add detail):
+   B. Professional Summary - COMPLETE REWRITE REQUIRED:
+   - MUST incorporate job's domain focus (e.g., "market intelligence", "e-commerce", "fintech")
+   - MUST use job's key value propositions (e.g., "AI-first", "data-driven", "innovation")
+   - MUST lead with relevant technical identity matching job (e.g., "Full-Stack Engineer specializing in AI-powered analytics platforms")
+   - MUST be 2-4 sentences, role-specific
+   - Example for market intelligence job: "Full-Stack Engineer with 8+ years building data-driven intelligence platforms and AI-powered analytics. Led development of real-time dashboards and LLM-integrated systems serving enterprise clients. Expert in React, Python, and cloud-scale data visualization."
+
+   C. Emphasize (expand, move up, add detail):
    - Which job experiences should be expanded?
    - Which specific bullet points need more architectural depth?
-   - Which technologies need to be surfaced more?
+   - Which technologies need to be surfaced more? (especially those matching job's primary tech focus)
+   - Which projects align with job's domain/business context and should be highlighted?
 
-   C. De-emphasize (condense, move down, reduce detail):
+   D. De-emphasize (condense, move down, reduce detail):
    - Which experiences are less relevant and should be condensed?
    - Which bullet points distract from the target narrative?
    - Which technologies should be mentioned less prominently?
 
-   D. Reframe Bullets (change angle, not content):
+   E. Reframe Bullets (change angle, not content):
    - For each key bullet that needs reframing, provide:
      * Original focus: [What does it currently emphasize?]
-     * New angle: [What aspect should we emphasize instead?]
+     * New angle: [What aspect should we emphasize instead? Must match job's business context]
      * Example rewrite: [Show the transformation]
-
-   E. Summary Rewrite:
-   - New professional summary that positions candidate for THIS role
-   - Should be 2-3 sentences, role-specific
-   - Example: "Backend engineer with 6+ years building distributed systems at scale..."
+     * Domain shift needed: [e.g., "automotive metrics" → "business intelligence metrics"]
 
 CRITICAL RULES:
 - If the candidate truly doesn't have relevant experience, set severity to CRITICAL and explain why
@@ -167,24 +179,32 @@ OUTPUT: Return ONLY valid JSON (no markdown, no code blocks) in this exact forma
 {{
   "mismatch_severity": "CRITICAL|MODERATE|MINOR|NONE",
   "job_role_type": "string",
+  "job_domain_focus": "string - e.g., Market Intelligence, E-commerce, Fintech",
+  "job_business_context": "string - what business problem this role solves",
   "job_primary_focus": ["tech1", "tech2", "tech3"],
+  "job_key_value_propositions": ["value1", "value2", "value3"],
   "job_key_responsibilities": ["resp1", "resp2", "resp3"],
   "resume_role_type": "string",
+  "resume_domain_focus": "string - current domain emphasis",
+  "resume_business_context": "string - current business value emphasis",
   "resume_primary_focus": ["tech1", "tech2", "tech3"],
-  "gap_description": "string",
+  "gap_description": "string - include role, domain, and business context gaps",
+  "domain_mismatch": true/false,
   "hidden_strengths": ["strength1", "strength2"],
   "repositioning_strategy": {{
-    "narrative_reframe": "string - how to reposition the candidate",
+    "narrative_reframe": "string - how to reposition the candidate including domain shift",
+    "domain_context_shift": "string - e.g., 'automotive analytics' to 'market intelligence'",
+    "summary_rewrite": "string - COMPLETE new professional summary with job's domain focus and value propositions",
     "emphasize_sections": ["section or bullet to expand"],
     "deemphasize_sections": ["section or bullet to condense"],
     "reframe_bullets": [
       {{
         "original_focus": "string",
-        "new_angle": "string",
+        "new_angle": "string - must match job's business context",
+        "domain_shift": "string - how domain context changes",
         "example_rewrite": "string"
       }}
-    ],
-    "summary_rewrite": "string - new professional summary"
+    ]
   }}
 }}
 

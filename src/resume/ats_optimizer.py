@@ -341,7 +341,16 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks."""
         missing_skills_json = json.dumps(missing_skills, indent=2)
         current_coverage = coverage_analysis['coverage_analysis']['overall_score']
 
-        prompt = f"""You are an expert resume writer and ATS optimization specialist. Add CRITICAL missing keywords ONLY while avoiding keyword stuffing that makes resumes feel AI-generated.
+        resume_summary = json.dumps(resume.get('professional_summary', ''), indent=2)
+
+        prompt = f"""You are an expert resume writer and ATS optimization specialist. Add CRITICAL missing keywords while avoiding keyword stuffing.
+
+JOB TITLE: {job.get('title', 'N/A')}
+JOB DESCRIPTION EXCERPT:
+{job.get('description', '')[:1500]}
+
+CURRENT RESUME PROFESSIONAL SUMMARY:
+{resume_summary}
 
 CURRENT RESUME EXPERIENCE:
 {experience_json}
@@ -365,7 +374,17 @@ CRITICAL ANTI-KEYWORD-STUFFING RULES:
    - Skip "IMPORTANT" unless coverage gap is huge
    - NEVER add "NICE_TO_HAVE" skills
 
-3. SURGICAL INSERTION (modify max {self.max_bullets_to_modify} bullets):
+3. PROFESSIONAL SUMMARY UPDATE (if needed):
+   - If CRITICAL missing skills are in professional_summary, add them naturally
+   - Keep it concise (2-4 sentences)
+   - Example:
+     Before: "Senior Full-Stack Engineer with 8+ years building React applications"
+     After: "Senior Full-Stack Engineer with 8+ years building React and Python applications"
+     (Added "Python" if it's a CRITICAL missing skill)
+   - Only modify if you can add 1-2 CRITICAL keywords naturally
+   - If summary already good, leave unchanged
+
+4. SURGICAL BULLET INSERTION (modify max {self.max_bullets_to_modify} bullets):
 
    ✅ GOOD - ADD ONE KEYWORD NATURALLY:
    Before: "Built authentication service with JWT tokens"
@@ -382,7 +401,7 @@ CRITICAL ANTI-KEYWORD-STUFFING RULES:
    After:  "Built OAuth2 authentication service using Python, FastAPI, PostgreSQL, Redis, Docker, and Kubernetes"
    Why bad: Added 6 keywords to one bullet = AI-generated feel
 
-4. MAINTAIN ORIGINAL VOICE:
+5. MAINTAIN ORIGINAL VOICE:
    - Keep 60%+ of original wording
    - Don't turn every bullet into a tech list
    - Some bullets should have NO new keywords (natural variation)
@@ -390,7 +409,14 @@ CRITICAL ANTI-KEYWORD-STUFFING RULES:
 OUTPUT FORMAT (JSON only, no markdown):
 {{
   "modified_resume": {{
+    "professional_summary": "updated summary (or same if no changes)",
     "experience": [...]
+  }},
+  "summary_modification": {{
+    "changed": true/false,
+    "original": "...",
+    "modified": "...",
+    "keywords_added": ["Python"]
   }},
   "modifications": [
     {{
@@ -428,8 +454,11 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks."""
 
             # Apply modifications to full resume
             modified_resume = resume.copy()
-            if 'modified_resume' in result and 'experience' in result['modified_resume']:
-                modified_resume['experience'] = result['modified_resume']['experience']
+            if 'modified_resume' in result:
+                if 'experience' in result['modified_resume']:
+                    modified_resume['experience'] = result['modified_resume']['experience']
+                if 'professional_summary' in result['modified_resume']:
+                    modified_resume['professional_summary'] = result['modified_resume']['professional_summary']
 
             result['modified_resume'] = modified_resume
             return result

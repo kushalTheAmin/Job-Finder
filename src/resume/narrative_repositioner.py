@@ -105,11 +105,20 @@ YOUR JOB: Transform this resume to match the target role emphasis.
 
 INSTRUCTIONS:
 
-1. PROFESSIONAL SUMMARY REWRITE:
-   - Replace current summary with the one from repositioning_strategy
-   - Make it role-specific and compelling
-   - 2-3 sentences maximum
-   - Lead with target role identity (e.g., "Backend Engineer with...")
+1. PROFESSIONAL SUMMARY REWRITE - MANDATORY AND AGGRESSIVE:
+   - Use the summary_rewrite from repositioning_strategy as your BLUEPRINT
+   - MUST incorporate job's domain focus (e.g., "market intelligence", "e-commerce")
+   - MUST use job description's key value propositions and language
+   - MUST lead with relevant technical identity matching THIS job
+   - Include specific relevant technologies from job posting
+   - 2-4 sentences maximum
+   - Be BOLD in repositioning - this is your chance to align the narrative
+
+   Example transformations:
+   Original: "Senior Full-Stack Engineer building automotive analytics"
+   For CB Insights job: "Full-Stack Engineer with 8+ years building data-driven market intelligence platforms and AI-powered analytics. Led development of real-time dashboards and LLM-integrated systems for enterprise decision-making. Expert in React, TypeScript, Python, and cloud-scale data visualization."
+
+   For Python/Django backend job: "Backend-focused Full-Stack Engineer with 8+ years architecting Python-based services and APIs. Specialized in Django applications, PostgreSQL databases, and microservices architecture. Strong foundation in React for full-stack integration."
 
 2. EXPERIENCE NARRATIVE TRANSFORMATION:
 
@@ -143,39 +152,60 @@ INSTRUCTIONS:
       New angle: Full-stack integration with backend services
       Rewrite: Instead of "Built React components", say "Integrated React frontend with Node.js APIs and Redis caching layer"
 
-3. EXPERIENCE REORDERING:
-   - Within each job, put most relevant bullets FIRST
-   - Most impressive, role-relevant achievements at the top
-   - Less relevant work moves to bottom or gets removed
+3. EXPERIENCE REORDERING - CRITICAL FOR IMPACT:
+   - Within EACH job, REORDER bullets to put job-relevant ones FIRST
+   - Bullets matching job's domain/tech should be at TOP (positions 0-2)
+   - Most impressive, role-relevant achievements move up
+   - Less relevant work moves to bottom or gets condensed to one line
+   - This is how you demonstrate fit WITHOUT fabricating experience
 
-4. DETAIL LEVEL VARIATION (CRITICAL):
+   Example for market intelligence job:
+   Before order: [Component library, AI messaging, Dashboard, Redis incident, Testing]
+   After order: [AI messaging, Dashboard, Component library, Testing, Redis incident]
+   Why: AI and dashboards are core to market intelligence, so they go first
+
+4. DOMAIN/BUSINESS CONTEXT REFRAMING:
+   - Apply domain_context_shift from repositioning_strategy
+   - Change terminology to match job's business context
+   - Example shifts:
+     * "automotive dealership metrics" → "business intelligence metrics"
+     * "dealer engagement" → "client engagement" or "user analytics"
+     * "vehicle data" → "market data" or "analytical datasets"
+   - Keep the facts, change the framing to be domain-agnostic or job-aligned
+
+5. DETAIL LEVEL VARIATION (CRITICAL):
    - Emphasized bullets: 2-3 lines, rich architectural detail
    - Standard bullets: 1-2 lines, good detail
    - De-emphasized bullets: 1 line, factual only
    - This creates natural emphasis hierarchy
 
-5. ROLE-SPECIFIC LANGUAGE:
+6. ROLE-SPECIFIC LANGUAGE:
    - If target is Backend: Use "service architecture", "API design", "data modeling", "system performance"
    - If target is Frontend: Use "user experience", "component architecture", "performance optimization", "accessibility"
    - If target is Full-Stack: Balance both, lead with the primary focus
+   - If target is Data/Analytics: Use "data-driven", "insights", "analytics", "intelligence", "metrics"
    - Use terminology from the job description
 
-6. MAINTAIN AUTHENTICITY:
+7. MAINTAIN AUTHENTICITY:
    - DO NOT fabricate experience that doesn't exist
    - DO NOT add technologies the candidate never used
    - DO reframe existing experience to highlight relevant aspects
    - DO add context that was implied but not stated
+   - DO apply domain_context_shift to make experience relevant
 
-7. SKILLS SECTION:
+8. SKILLS SECTION:
    - Reorder skills to match target role priority
    - Most relevant skills first in each category
-   - Can add categories if needed (e.g., "Backend", "Frontend", "Cloud")
+   - Can add categories if needed (e.g., "Backend", "Frontend", "Cloud", "Data")
 
 CRITICAL RULES:
 - Keep all dates, company names, job titles EXACTLY as they are
 - Don't invent new experiences or technologies
 - Focus on repositioning HOW things are presented, not WHAT was done
 - Maintain chronological order of jobs
+- BE AGGRESSIVE with the professional summary - it MUST change significantly to match the job
+- REORDER bullets within each job to put most relevant ones first
+- Apply domain/business context shifts to make experience relevant (e.g., "dealership" → "client", "automotive" → "business")
 - Output must be complete, valid JSON matching the input structure
 
 OUTPUT FORMAT: Return ONLY valid JSON (no markdown, no code blocks) with the complete repositioned resume.

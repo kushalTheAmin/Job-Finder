@@ -19,7 +19,7 @@ from src.scrapers.aggregator import JobAggregator
 from src.matcher.job_matcher import JobMatcher
 from src.resume.smart_customizer import SmartResumeCustomizer
 from src.resume.interview_prep import InterviewPrepGenerator
-from src.resume.pdf_generator import PDFResumeGenerator
+from src.resume.doc_generator import DOCResumeGenerator
 from src.storage.firestore_db import FirestoreDB
 from src.storage.gdrive import GoogleDriveUploader
 from src.notifier.email_sender import EmailSender
@@ -51,7 +51,7 @@ class JobFinderOrchestrator:
         self.job_matcher = JobMatcher(self.config, self.master_resume)
         self.resume_customizer = SmartResumeCustomizer(self.config, self.master_resume)
         self.interview_prep_gen = InterviewPrepGenerator()
-        self.pdf_generator = PDFResumeGenerator()
+        self.doc_generator = DOCResumeGenerator()
         self.firestore = FirestoreDB(self.config)
         self.drive_uploader = GoogleDriveUploader(
             self.config.google_drive_folder_id
@@ -166,7 +166,7 @@ class JobFinderOrchestrator:
         return jobs
 
     def _customize_resumes(self, jobs: List[Dict[str, Any]]) -> Tuple[List[str], List[Dict[str, Any]]]:
-        """Customize resumes for each job and generate PDFs with interview prep."""
+        """Customize resumes for each job and generate DOCX files with interview prep."""
         resume_files = []
         prep_guides = []
 
@@ -195,11 +195,11 @@ class JobFinderOrchestrator:
                         f.write(prep_text)
                     logger.info(f"  Generated interview prep guide: {prep_file_path.name}")
 
-                # Generate PDF
-                pdf_path = self.pdf_generator.generate(customized_resume, job)
-                resume_files.append(pdf_path)
+                # Generate DOCX
+                docx_path = self.doc_generator.generate(customized_resume, job)
+                resume_files.append(docx_path)
 
-                logger.info(f"✓ Generated resume: {Path(pdf_path).name}")
+                logger.info(f"✓ Generated resume: {Path(docx_path).name}")
 
             except Exception as e:
                 logger.error(f"Error customizing resume for job: {str(e)}")

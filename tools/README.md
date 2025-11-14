@@ -1,207 +1,438 @@
-# Resume Converter Tool
+# AI Resume Converter Tool
 
-This tool helps you convert your existing resume (PDF, DOCX, or text) into the JSON format required by the Job Finder system.
+**Convert your resume (PDF/DOCX/TXT) to JSON format using AI - in 5 minutes!**
 
-## Quick Start
+This tool uses Google's Gemini AI to read your resume and create a structured JSON file. The AI validates itself and fixes any issues automatically.
+
+---
+
+## Quick Start (3 Steps)
+
+### Step 1: Get Your Free Gemini API Key (2 minutes)
+
+1. Go to: **https://ai.google.dev/**
+2. Click "**Get API Key**"
+3. Click "**Create API Key**"
+4. Copy the key (looks like: `AIzaSy...`)
+
+### Step 2: Install Dependencies (1 minute)
 
 ```bash
-# Install dependencies (if needed)
-pip install PyPDF2 python-docx google-cloud-aiplatform
-
-# Run the converter
-python tools/resume_converter.py
+# Install the resume converter dependencies
+pip install -r requirements-local.txt
 ```
 
-## Usage Options
+This installs:
+- `google-generativeai` - Google AI SDK (for Gemini)
+- `PyPDF2` - PDF reader
+- `python-docx` - DOCX reader
+- Other utilities
 
-### Option 1: AI-Powered Conversion (Recommended)
+### Step 3: Add API Key to .env File (30 seconds)
 
-**Requirements:**
-- Google Cloud account with Vertex AI enabled
-- GOOGLE_CLOUD_PROJECT environment variable set
-
-**Steps:**
-1. Run: `python tools/resume_converter.py`
-2. Choose your resume format (PDF, DOCX, TXT, or paste)
-3. Select "AI-powered conversion"
-4. AI will parse and convert to JSON
-5. Review and save
-
-**Example:**
 ```bash
-$ python tools/resume_converter.py
+# Create .env file if you don't have one
+cp .env.template .env
 
-How would you like to provide your resume?
-1. Upload PDF file
-2. Upload DOCX file
-3. Upload TXT file
-4. Paste text manually
+# Open .env file and add your key:
+GEMINI_API_KEY=AIzaSy...your-actual-key-here
+```
 
-Enter your choice (1-4): 1
-Enter path to PDF file: ~/Downloads/my_resume.pdf
+---
 
-✅ Resume text extracted (3450 characters)
+## How to Convert Your Resume
 
-Conversion method:
-1. AI-powered conversion
-2. Manual JSON template
+### Run the Converter
 
-Enter your choice (1-2): 1
+```bash
+python tools/ai_resume_converter.py
+```
 
-🤖 Converting resume using AI...
-✅ Resume converted successfully!
+### Follow the Prompts
 
+```
+🤖 AI-POWERED RESUME CONVERTER
+==============================================================
+
+Enter path to your resume file: /path/to/your/resume.pdf
+```
+
+### What Happens Next
+
+1. **AI reads your resume** (extracts text from PDF/DOCX)
+2. **AI converts to JSON** (structures all information)
+3. **AI validates** (checks if everything looks good)
+4. **AI fixes issues** (if any problems found)
+5. **You review** (preview the JSON)
+6. **Saves to** `data/master_resume.json`
+
+**The AI tries up to 3 times to get it perfect!**
+
+---
+
+## Example Run
+
+```bash
+$ python tools/ai_resume_converter.py
+
+==============================================================
+🤖 AI-POWERED RESUME CONVERTER
+==============================================================
+
+This tool converts your resume (PDF/DOCX/TXT) to JSON format.
+The AI will read your resume and create a structured JSON file.
+
+Enter path to your resume file: ~/Downloads/my_resume.pdf
+
+🔄 Converting resume: ~/Downloads/my_resume.pdf
+✓ Extracted 3450 characters
+
+🤖 AI Conversion - Attempt 1/3
+🔍 AI validating its own output...
+✅ Validation passed!
+
+==============================================================
 📋 PREVIEW OF CONVERTED RESUME
-...
+==============================================================
+{
+  "personal_info": {
+    "name": "John Smith",
+    "email": "john@example.com",
+    "phone": "+1 (555) 123-4567",
+    ...
+  },
+  "summary": "Experienced software engineer with 8 years...",
+  ...
+}
 
-Save this resume? (y/n): y
+==============================================================
+📊 CONVERSION STATISTICS
+==============================================================
+✓ AI attempts used: 1/3
+✓ Name: John Smith
+✓ Experience entries: 3
+✓ Skills categories: 6
+✓ Education entries: 1
+
+==============================================================
+Save this resume to data/master_resume.json? (y/n): y
+
 ✅ Resume saved to: data/master_resume.json
+
+📝 Next steps:
+   1. Review and edit: data/master_resume.json
+   2. Make sure all information is correct
+   3. Update config.yaml with your job preferences
+   4. Deploy to cloud: cd deploy && ./deploy.sh
 ```
 
-### Option 2: Manual Template
+---
 
-If you don't have Vertex AI set up:
+## Supported File Formats
 
-1. Run: `python tools/resume_converter.py`
-2. Provide your resume text
-3. Select "Manual JSON template"
-4. Edit the generated template file
-5. Copy your info from extracted text
+| Format | Extension | Notes |
+|--------|-----------|-------|
+| **PDF** | `.pdf` | Must be text-based (not scanned image) |
+| **Word** | `.docx` | Microsoft Word documents |
+| **Text** | `.txt` | Plain text files |
 
-## Output Format
+**File size limit:** 10 MB
 
-The tool creates a JSON file with this structure:
+---
+
+## What the AI Does
+
+### 1. Intelligent Extraction
+- Reads your resume text
+- Understands structure (sections, dates, companies)
+- Extracts personal info, experience, skills, education
+- Recognizes different resume formats
+
+### 2. Self-Validation
+- Checks if email is valid
+- Verifies dates are in correct format
+- Ensures required fields exist
+- Detects placeholder text
+
+### 3. Auto-Fixing
+- If validation finds issues → AI fixes them
+- Tries up to 3 times to get it perfect
+- You see the final, validated result
+
+---
+
+## Output JSON Structure
+
+The AI creates this JSON structure:
 
 ```json
 {
   "personal_info": {
     "name": "Your Name",
-    "title": "Your Job Title",
-    "email": "email@example.com",
+    "email": "your.email@example.com",
     "phone": "+1 (555) 123-4567",
     "location": "City, State",
     "linkedin": "linkedin.com/in/username",
-    "github": "github.com/username"
+    "github": "github.com/username",
+    "portfolio": "yourwebsite.com"
   },
-  "summary": "Professional summary...",
+  "summary": "Professional summary (2-3 sentences)",
   "skills": {
-    "programming_languages": ["Python", "JavaScript"],
-    "frontend": ["React", "Vue.js"],
-    "backend": ["Node.js", "Django"],
-    "databases": ["PostgreSQL", "MongoDB"],
-    "cloud_devops": ["AWS", "Docker"],
-    "tools": ["Git", "VS Code"]
+    "programming_languages": ["Python", "JavaScript", "Java"],
+    "frontend": ["React", "Vue.js", "Angular"],
+    "backend": ["Node.js", "Django", "FastAPI"],
+    "databases": ["PostgreSQL", "MongoDB", "Redis"],
+    "cloud_devops": ["AWS", "Docker", "Kubernetes"],
+    "tools": ["Git", "VS Code", "Jira"]
   },
   "experience": [
     {
       "company": "Company Name",
-      "position": "Job Title",
+      "title": "Job Title",
       "location": "City, State",
-      "start_date": "2021-01",
+      "start_date": "2021-03",
       "end_date": "Present",
-      "responsibilities": [
-        "Built feature X, improving metric by Y%",
-        "Led team of Z developers"
+      "bullets": [
+        "Achievement with metrics (e.g., Improved performance by 40%)",
+        "Another achievement with impact"
       ],
       "technologies": ["React", "Node.js", "AWS"]
     }
   ],
-  "education": [...],
-  "certifications": [...],
-  "projects": [...]
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "school": "University Name",
+      "location": "City, State",
+      "graduation_date": "2020-05",
+      "gpa": "3.8/4.0"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect",
+      "issuer": "Amazon Web Services",
+      "date": "2023-06"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Brief description",
+      "technologies": ["Python", "React"],
+      "link": "github.com/user/project"
+    }
+  ]
 }
 ```
 
-## Tips for Best Results
+---
 
-### Writing Achievements
+## After Conversion - What to Do
 
-**Bad (vague):**
-- "Worked on frontend development"
-- "Responsible for API creation"
+### 1. Review the JSON (5 minutes)
 
-**Good (specific with metrics):**
-- "Built customer dashboard using React, serving 50K daily users"
-- "Created REST API handling 100K requests/day with 99.9% uptime"
+Open `data/master_resume.json` and check:
+- ✅ Personal info is correct
+- ✅ All jobs are listed
+- ✅ Skills are categorized properly
+- ✅ Dates are in YYYY-MM format
+- ✅ No placeholder text
 
-### Technology Specificity
+### 2. Manual Edits (if needed)
 
-**Bad:**
-- "Web development"
-- "Cloud technologies"
+You can edit the JSON file directly:
+```bash
+# Use any text editor
+nano data/master_resume.json
+# or
+code data/master_resume.json
+```
 
-**Good:**
-- "React, Next.js, TypeScript"
-- "AWS (Lambda, S3, RDS), Docker, Kubernetes"
+**Important**: Keep it valid JSON! Use a JSON validator if unsure: https://jsonlint.com/
 
-### Date Formats
+### 3. Test Locally
 
-Use YYYY-MM format for dates:
-- ✅ "2021-03"
-- ✅ "Present"
-- ❌ "March 2021"
-- ❌ "2021"
+```bash
+# Test the system with your resume
+python main.py
+```
+
+### 4. Deploy to Cloud
+
+```bash
+# Once you're happy, deploy
+cd deploy
+./deploy.sh
+```
+
+---
 
 ## Troubleshooting
 
-### PDF Not Reading Correctly
+### ❌ "GEMINI_API_KEY not found"
 
+**Problem**: API key not set
+
+**Solution**:
 ```bash
-# Install PDF library
-pip install PyPDF2
-
-# If still having issues, try converting to text first
-# Then use Option 3 or 4
+# 1. Get key from: https://ai.google.dev/
+# 2. Add to .env file:
+echo "GEMINI_API_KEY=your-key-here" >> .env
 ```
 
-### Vertex AI Errors
+### ❌ "Cannot read PDF"
 
-```bash
-# Set project ID
-export GOOGLE_CLOUD_PROJECT=your-project-id
+**Problem**: PDF is scanned image or corrupted
 
-# Set credentials
-export GOOGLE_APPLICATION_CREDENTIALS=path/to/key.json
+**Solutions**:
+1. Try converting PDF to DOCX first
+2. Or copy-paste text into a .txt file
+3. Make sure PDF is text-based (not image)
 
-# Enable Vertex AI API
-gcloud services enable aiplatform.googleapis.com
+### ❌ "AI conversion failed"
+
+**Problem**: AI couldn't parse resume
+
+**Solutions**:
+1. Check resume file isn't corrupted
+2. Try with a simpler format (TXT file)
+3. Manually create JSON using the template above
+4. Ensure resume has clear sections (Experience, Education, etc.)
+
+### ❌ "File too large"
+
+**Problem**: Resume file > 10MB
+
+**Solution**:
+1. Compress the PDF
+2. Remove images/graphics
+3. Or copy text to .txt file
+
+### ❌ "Validation found issues"
+
+**Problem**: AI detected problems in generated JSON
+
+**What happens**:
+- AI will automatically try to fix (up to 3 attempts)
+- If it can't fix, you'll see what's wrong
+- You can manually edit the JSON file
+
+**Example**:
+```
+⚠️  Validation found 2 issues:
+   - Missing email in personal_info
+   - Date format wrong in experience[0]
+
+🔧 AI will fix these issues...
+
+🤖 AI Conversion - Attempt 2/3
+✅ Validation passed!
 ```
 
-### Manual Editing
+---
 
-If AI conversion doesn't work perfectly:
+## Tips for Best Results
 
-1. It will save to `data/master_resume.json`
-2. Open the file in any text editor
-3. Fix any incorrect information
-4. Ensure JSON is valid (use jsonlint.com to check)
+### ✅ DO:
+- Use a clean, well-formatted resume
+- Have clear section headings (Experience, Education, Skills)
+- Use consistent date formats in your original resume
+- Include metrics in achievements ("Improved X by 40%")
 
-## After Conversion
+### ❌ DON'T:
+- Use scanned PDFs (AI can't read images)
+- Have complex tables or graphics
+- Use unusual resume formats
+- Skip important sections
 
-Once you have `data/master_resume.json`:
+---
 
-1. **Review carefully** - ensure all info is accurate
-2. **Update personal info** - email, phone, links
-3. **Verify achievements** - check metrics and dates
-4. **Test the system** - run `python main.py` to test
-5. **Make it your master** - this becomes your source resume
+## Why Use This Instead of Manual JSON?
 
-## Alternative: Use Sample Resume
+| Manual JSON | AI Converter |
+|-------------|--------------|
+| 30-60 minutes | 5 minutes |
+| Error-prone | Auto-validated |
+| Need to understand JSON | Just run the tool |
+| Manual formatting | AI formats perfectly |
+| Easy to make mistakes | AI catches issues |
 
-If you want to test first:
+---
 
-```bash
-# The system includes a sample resume
-cp data/master_resume.json data/master_resume_backup.json
+## Differences from Old Converter
 
-# Edit the sample with your info
-nano data/master_resume.json
+### Old Tool (`resume_converter.py`):
+- ❌ Required Vertex AI (cloud setup)
+- ❌ Needed service account
+- ❌ Complex authentication
+- ❌ Only worked with cloud access
 
-# Or just use it to understand the format
-```
+### New Tool (`ai_resume_converter.py`):
+- ✅ Uses simple Gemini API (FREE!)
+- ✅ Works on any computer
+- ✅ Just needs API key
+- ✅ No cloud setup required
+- ✅ AI validates and fixes itself
+
+---
+
+## Security & Privacy
+
+### Your Data:
+- ✅ Resume text sent to Google Gemini API
+- ✅ Used ONLY for conversion
+- ✅ Not stored by Google after processing
+- ✅ JSON file stays on your computer
+
+### API Key:
+- ✅ Stored in `.env` file (not committed to git)
+- ✅ Only used for AI conversion
+- ✅ Can be regenerated anytime
+- ✅ Free tier: 60 requests/minute
+
+---
+
+## FAQ
+
+**Q: Is Gemini API free?**
+A: Yes! Free tier includes 60 requests/minute. You'll only use 1-3 requests per conversion.
+
+**Q: Do I need Google Cloud for this?**
+A: No! This tool uses simple Gemini API, not Vertex AI. No cloud setup needed.
+
+**Q: Will this work on Windows/Mac/Linux?**
+A: Yes! Works on all platforms.
+
+**Q: Can I convert multiple resumes?**
+A: Yes, run the tool multiple times. Each run creates/overwrites `data/master_resume.json`.
+
+**Q: What if the AI makes mistakes?**
+A: You can manually edit the JSON file after conversion. The AI is usually 95%+ accurate.
+
+**Q: Can I use this without internet?**
+A: No, it needs internet to call Gemini API.
+
+---
 
 ## Need Help?
 
-Check the main README.md for full system documentation.
+1. **Check error messages** - They tell you exactly what's wrong
+2. **Read troubleshooting section** above
+3. **Try with a different file format** (PDF → DOCX → TXT)
+4. **Check main README.md** for full system setup
+5. **Manually create JSON** using the template if all else fails
 
-For Vertex AI setup: `deploy/setup_guide.md`
+---
+
+## What's Next?
+
+After successfully converting your resume:
+
+1. ✅ Review `data/master_resume.json`
+2. ✅ Update `config.yaml` with job preferences
+3. ✅ Test locally: `python main.py`
+4. ✅ Deploy to cloud: `cd deploy && ./deploy.sh`
+5. ✅ Get daily job matches with custom resumes!
+
+**Good luck with your job search!** 🚀

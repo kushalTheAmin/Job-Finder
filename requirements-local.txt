@@ -1,0 +1,17 @@
+# Local Resume Converter Dependencies
+# Install these ONLY on your local machine for resume conversion
+
+# Google AI SDK for Gemini (NOT Vertex AI - that's for cloud)
+google-generativeai==0.3.2
+
+# PDF reading
+PyPDF2==3.0.1
+
+# DOCX reading
+python-docx==0.8.11
+
+# Environment variables
+python-dotenv==1.0.0
+
+# YAML configuration
+pyyaml==6.0.1

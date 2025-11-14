@@ -19,8 +19,8 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 lxml==4.9.3
 
-# PDF generation
-reportlab==4.0.7
+# DOCX generation (for cloud function)
+python-docx==0.8.11
 
 # Utilities
 pytz==2023.3.post1

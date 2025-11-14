@@ -1,6 +1,42 @@
-# AI Resume Converter Tool
+# AI Resume Converter Tools
 
 **Convert your resume (PDF/DOCX/TXT) to JSON format using AI - in 5 minutes!**
+
+We provide **TWO** converter tools depending on your setup:
+
+| Tool | Best For | Authentication | Setup Time |
+|------|----------|----------------|------------|
+| **`convert_resume_vertex.py`** | Users with Google Cloud project | Service Account (already configured) | **0 min** ✅ |
+| **`ai_resume_converter.py`** | Users without Google Cloud | Free Gemini API key | 2 min |
+
+---
+
+## 🚀 Option 1: Vertex AI Converter (Recommended if you have GCP)
+
+**Use this if you already have:**
+- Google Cloud project configured
+- `service-account-key.json` file
+- `GOOGLE_CLOUD_PROJECT` in your `.env`
+
+### Quick Start
+
+```bash
+# Just run it - no additional setup needed!
+python tools/convert_resume_vertex.py /path/to/your/resume.pdf
+```
+
+That's it! The converter uses your existing Google Cloud credentials.
+
+### How It Works
+
+1. Uses **Vertex AI** with your service account
+2. Automatically reads `GOOGLE_CLOUD_PROJECT` from `.env`
+3. No need for additional API keys
+4. Same AI-powered conversion as Option 2
+
+---
+
+## Option 2: Gemini API Converter (For users without GCP)
 
 This tool uses Google's Gemini AI to read your resume and create a structured JSON file. The AI validates itself and fixes any issues automatically.
 

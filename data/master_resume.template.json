@@ -1,0 +1,170 @@
+{
+  "personal_info": {
+    "name": "John Smith",
+    "email": "john.smith@email.com",
+    "phone": "+1 (555) 123-4567",
+    "location": "New York, NY",
+    "linkedin": "linkedin.com/in/johnsmith",
+    "github": "github.com/johnsmith",
+    "website": "https://johnsmith.dev",
+    "portfolio": "https://portfolio.johnsmith.dev"
+  },
+  "summary": "Senior Full-Stack Engineer with **8+** years building **React/TypeScript** applications and **C#/.NET** back ends. Currently leading frontend development at **Tech Corp**, driving UI modernization and **AI** integration for analytics platforms. Strong hands-on experience with cloud infrastructure (**GCP**, **AWS**), testing frameworks, and establishing team development standards.",
+  "skills": {
+    "Frontend": [
+      "React",
+      "Next.js",
+      "TypeScript",
+      "Redux",
+      "HTML5",
+      "CSS3",
+      "SASS"
+    ],
+    "Backend": [
+      "C#/.NET Core",
+      "Python",
+      "Node.js",
+      "RESTful APIs",
+      "Microservices"
+    ],
+    "Cloud/Data": [
+      "GCP",
+      "AWS",
+      "Azure DevOps",
+      "Redis",
+      "PostgreSQL",
+      "MongoDB"
+    ],
+    "Tools": [
+      "Git",
+      "Docker",
+      "Jest",
+      "SonarQube",
+      "Webpack",
+      "JIRA"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Tech Corp",
+      "location": "San Francisco, CA",
+      "position": "Senior Full-Stack Engineer",
+      "start_date": "August 2021",
+      "end_date": "Present",
+      "context": "Building analytics platform, an AI-powered solution for data-driven decision making.",
+      "responsibilities": [
+        "Lead frontend development for **8**-person team—conduct code reviews, establish **React/TypeScript** standards, and mentor **3** junior developers.",
+        "Drove UI modernization migrating **5+** legacy apps from **jQuery/AngularJS** to **React/Next.js** with **TypeScript**. Reduced page load times from **~6s** to **~3.5s** through code splitting and lazy loading.",
+        "Built component library (**50+** components) with design system and **Storybook** docs—reduced development time by **30%** as developers scaffold UIs in hours instead of days.",
+        "Integrated **AI** messaging system using **Google Gemini API** with prompt engineering architecture. Generates **~10K** personalized messages daily. Solved output inconsistency by implementing structured prompts.",
+        "Resolved critical production incident: diagnosed **Redis** connection exhaustion (**500+** connections causing degradation), implemented connection pooling with circuit breaker pattern, reduced to **~50** connections.",
+        "Established **CI/CD** pipelines in **Azure DevOps** with automated testing (**Jest**) and code quality gates (**SonarQube**). Improved code coverage from **~60%** to **85%+** and SonarQube rating from C to **A**."
+      ],
+      "technologies": [
+        "React",
+        "Next.js",
+        "TypeScript",
+        "Redux",
+        "C#/.NET Core",
+        "GCP",
+        "BigQuery",
+        "Azure DevOps",
+        "Redis",
+        "PostgreSQL"
+      ]
+    },
+    {
+      "company": "Innovation Labs",
+      "location": "New York, NY",
+      "position": "Full-Stack Developer",
+      "start_date": "June 2018",
+      "end_date": "July 2021",
+      "context": "Built e-commerce platform, a scalable solution for online retail operations.",
+      "responsibilities": [
+        "Developed responsive frontend using **React** and **Redux** for state management, serving **50K+** daily active users.",
+        "Built **RESTful APIs** with **Node.js** and **Express**, integrating with **MongoDB** for data persistence and **Redis** for caching.",
+        "Implemented **JWT** authentication and role-based access control (RBAC) securing **100K+** user accounts.",
+        "Collaborated with **12**-person engineering team using agile methodologies, participating in sprint planning and retrospectives.",
+        "Achieved **90%+** test coverage using **Jest** and **Enzyme** for unit and integration testing.",
+        "Deployed applications to **AWS** using **Docker** containers orchestrated with **ECS**, reducing deployment time by **50%**."
+      ],
+      "technologies": [
+        "React",
+        "Redux",
+        "Node.js",
+        "Express",
+        "MongoDB",
+        "Redis",
+        "JWT",
+        "AWS",
+        "Docker",
+        "ECS"
+      ]
+    },
+    {
+      "company": "StartupCo",
+      "location": "Boston, MA",
+      "position": "Junior Developer",
+      "start_date": "January 2017",
+      "end_date": "May 2018",
+      "context": "Developed customer management system for small businesses.",
+      "responsibilities": [
+        "Built responsive web applications using **JavaScript**, **HTML5**, and **CSS3**.",
+        "Collaborated with designers to implement pixel-perfect UI components.",
+        "Participated in code reviews and learned best practices from senior developers.",
+        "Fixed **50+** bugs and implemented **20+** feature requests.",
+        "Wrote unit tests using **Jest** achieving **70%+** coverage on new code."
+      ],
+      "technologies": [
+        "JavaScript",
+        "HTML5",
+        "CSS3",
+        "jQuery",
+        "Bootstrap",
+        "Git"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "institution": "University of California, Berkeley",
+      "year": "2017",
+      "gpa": "3.8",
+      "honors": "Magna Cum Laude"
+    }
+  ],
+  "certifications": [
+    "AWS Certified Solutions Architect - Associate",
+    "Google Cloud Professional Cloud Architect"
+  ],
+  "projects": [
+    {
+      "name": "Open Source Contribution - React Library",
+      "description": "Contributed **5** PRs to popular React component library, adding accessibility features and fixing performance issues.",
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Jest"
+      ],
+      "url": "https://github.com/example/react-library"
+    },
+    {
+      "name": "Personal Portfolio Website",
+      "description": "Built modern portfolio site with **Next.js**, featuring blog, project showcase, and contact form. Deployed on **Vercel**.",
+      "technologies": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "Vercel"
+      ],
+      "url": "https://johnsmith.dev"
+    }
+  ],
+  "achievements": [
+    "Led team that won company hackathon with AI-powered feature now in production",
+    "Speaker at React Conference 2023 - 'Building Scalable Component Libraries'",
+    "Mentored **10+** junior developers through company mentorship program",
+    "Reduced production bugs by **60%** through improved testing practices"
+  ]
+}

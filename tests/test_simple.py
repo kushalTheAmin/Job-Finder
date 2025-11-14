@@ -122,7 +122,7 @@ def test_doc_generation():
 
         # Phase 2: Smart renderer creates DOCX
         print("   Rendering DOCX from AI layout plan...")
-        output_path = doc_generator.generate(sample_resume, sample_job, layout_plan, output_dir="output/test")
+        output_path = doc_generator.generate(sample_resume, sample_job, layout_plan)
 
         print(f"\n✓ SUCCESS!")
         print(f"\n   Generated: {output_path}")

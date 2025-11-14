@@ -547,6 +547,41 @@ class SmartDOCXGenerator:
         doc.save(str(output_path))
         return output_path
 
+def _parse_markdown_bold(text: str) -> list:
+    """
+    Parse markdown bold syntax (**text**) and return segments with bold flags.
+
+    Args:
+        text: Text that may contain **bold** markdown syntax
+
+    Returns:
+        List of (text, is_bold) tuples
+
+    Example:
+        "Hello **world** test" -> [("Hello ", False), ("world", True), (" test", False)]
+    """
+    segments = []
+    current_pos = 0
+
+    # Find all **text** patterns
+    pattern = r'\*\*([^*]+)\*\*'
+    matches = list(re.finditer(pattern, text))
+
+    for match in matches:
+        # Add text before the bold section
+        if current_pos < match.start():
+            segments.append((text[current_pos:match.start()], False))
+
+        # Add the bold text (without the ** markers)
+        segments.append((match.group(1), True))
+        current_pos = match.end()
+
+    # Add remaining text
+    if current_pos < len(text):
+        segments.append((text[current_pos:], False))
+
+    return segments if segments else [(text, False)]
+
 
 class StrategicHighlighter:
     """Applies strategic bold highlighting to resume bullets."""
@@ -561,45 +596,62 @@ class StrategicHighlighter:
 
     @staticmethod
     def apply_strategic_highlighting(paragraph, text: str):
-        """Apply bold highlighting to key parts of text."""
-        # Collect ALL matches from ALL patterns first
-        all_matches = []
-        for pattern in StrategicHighlighter.HIGHLIGHT_PATTERNS:
-            for match in re.finditer(pattern, text, re.IGNORECASE):
-                all_matches.append((match.start(), match.end()))
+        """
+        Apply bold highlighting to key parts of text.
+        Handles both markdown bold syntax (**text**) and strategic highlighting patterns.
+        """
+        # Step 1: Parse markdown bold syntax first
+        markdown_segments = _parse_markdown_bold(text)
 
-        # Sort by start position
-        all_matches.sort(key=lambda x: x[0])
+        # Step 2: Process each markdown segment
+        for segment_text, is_markdown_bold in markdown_segments:
+            if not segment_text:
+                continue
 
-        # Merge overlapping matches
-        merged_matches = []
-        for start, end in all_matches:
-            if merged_matches and start <= merged_matches[-1][1]:
-                # Overlapping - extend the previous match
-                merged_matches[-1] = (merged_matches[-1][0], max(merged_matches[-1][1], end))
+            # Find strategic highlighting matches within this segment
+            strategic_matches = []
+            for pattern in StrategicHighlighter.HIGHLIGHT_PATTERNS:
+                for match in re.finditer(pattern, segment_text, re.IGNORECASE):
+                    strategic_matches.append((match.start(), match.end()))
+
+            # Sort and merge strategic matches
+            strategic_matches.sort(key=lambda x: x[0])
+            merged_matches = []
+            for start, end in strategic_matches:
+                if merged_matches and start <= merged_matches[-1][1]:
+                    merged_matches[-1] = (merged_matches[-1][0], max(merged_matches[-1][1], end))
+                else:
+                    merged_matches.append((start, end))
+
+            # Step 3: Create runs for this segment
+            if not merged_matches:
+                # No strategic matches - just add the segment with markdown bold if applicable
+                run = paragraph.add_run(segment_text)
+                run.font.bold = is_markdown_bold
+                run.font.size = Pt(10.5)
+                run.font.name = 'Calibri'
             else:
-                # Non-overlapping - add new match
-                merged_matches.append((start, end))
+                # Has strategic matches - interleave normal and strategic-bold text
+                position = 0
+                for start, end in merged_matches:
+                    # Add text before strategic match
+                    if position < start:
+                        run = paragraph.add_run(segment_text[position:start])
+                        run.font.bold = is_markdown_bold  # Respect markdown bold
+                        run.font.size = Pt(10.5)
+                        run.font.name = 'Calibri'
 
-        # Add runs in a single pass through the text
-        position = 0
-        for start, end in merged_matches:
-            # Add normal text before match
-            if position < start:
-                normal_run = paragraph.add_run(text[position:start])
-                normal_run.font.size = Pt(10.5)
-                normal_run.font.name = 'Calibri'
+                    # Add strategic match (always bold, even if not markdown bold)
+                    bold_run = paragraph.add_run(segment_text[start:end])
+                    bold_run.font.bold = True
+                    bold_run.font.size = Pt(10.5)
+                    bold_run.font.name = 'Calibri'
 
-            # Add bold match
-            bold_run = paragraph.add_run(text[start:end])
-            bold_run.font.bold = True
-            bold_run.font.size = Pt(10.5)
-            bold_run.font.name = 'Calibri'
+                    position = end
 
-            position = end
-
-        # Add remaining text
-        if position < len(text):
-            final_run = paragraph.add_run(text[position:])
-            final_run.font.size = Pt(10.5)
-            final_run.font.name = 'Calibri'
+                # Add remaining text in segment
+                if position < len(segment_text):
+                    run = paragraph.add_run(segment_text[position:])
+                    run.font.bold = is_markdown_bold  # Respect markdown bold
+                    run.font.size = Pt(10.5)
+                    run.font.name = 'Calibri'

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Test with real resume data to match the reference PDF.
+Uses the new AI-driven DOCX generation system.
 """
 
 import sys
@@ -8,7 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.resume.doc_generator import DOCResumeGenerator
+from src.resume.ai_docx_layout_analyzer import AIDOCXLayoutAnalyzer
+from src.resume.smart_doc_generator import SmartDOCXGenerator
+from src.config import get_config
+from src.utils import setup_logging
 
 # Real resume data from the PDF
 resume_data = {
@@ -87,18 +91,47 @@ job = {
 }
 
 print("=" * 70)
-print("GENERATING RESUME WITH REAL DATA")
+print("GENERATING RESUME WITH REAL DATA (AI-DRIVEN SYSTEM)")
 print("=" * 70)
 print()
 
-generator = DOCResumeGenerator()
-output_path = generator.generate(resume_data, job, output_dir="output/test")
+# Load configuration
+print("1. Loading configuration...")
+config = get_config("config.yaml")
+setup_logging(config.log_level, config.log_file)
+print("   ✓ Configuration loaded")
 
-print(f"✓ Generated: {output_path}")
-print(f"  Location: {Path(output_path).absolute()}")
-print()
-print("Compare this output with:")
-print("  /Users/kushal/Downloads/Kushal_Dhirendrakumar_Resume_2025.docx.pdf")
-print()
-print("To open:")
-print(f"  open '{output_path}'")
+# Initialize AI-driven system
+print("\n2. Initializing AI-driven DOCX generation system...")
+try:
+    layout_analyzer = AIDOCXLayoutAnalyzer(config)
+    doc_generator = SmartDOCXGenerator()
+    print("   ✓ AI Layout Analyzer initialized")
+    print("   ✓ Smart DOCX Generator initialized")
+except Exception as e:
+    print(f"   ✗ Error initializing AI system: {e}")
+    print("   Make sure Vertex AI credentials are configured")
+    sys.exit(1)
+
+# Generate resume using AI-driven two-phase system
+print("\n3. Generating resume (AI analysis + DOCX rendering)...")
+try:
+    # Phase 1: AI analyzes resume structure and creates layout plan
+    layout_plan = layout_analyzer.analyze_and_create_layout(resume_data, job)
+
+    # Phase 2: Smart renderer creates DOCX from layout plan
+    output_path = doc_generator.generate(resume_data, job, layout_plan, output_dir="output/test")
+
+    print(f"\n✓ Generated: {output_path}")
+    print(f"  Location: {Path(output_path).absolute()}")
+    print()
+    print("Compare this output with:")
+    print("  /Users/kushal/Downloads/Kushal_Dhirendrakumar_Resume_2025.docx.pdf")
+    print()
+    print("To open:")
+    print(f"  open '{output_path}'")
+except Exception as e:
+    print(f"\n✗ Error generating resume: {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)

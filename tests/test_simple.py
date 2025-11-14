@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple standalone test for DOC generator and strategic highlighting.
-No cloud configuration needed.
+Simple standalone test for AI-driven DOCX generation system.
+Tests the new AI Layout Analyzer + Smart DOCX Generator.
 """
 
 import sys
@@ -10,48 +10,16 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.resume.doc_generator import DOCResumeGenerator, StrategicHighlighter
-
-
-def test_strategic_highlighting():
-    """Test strategic highlighting logic."""
-    print("=" * 70)
-    print("TESTING STRATEGIC HIGHLIGHTING")
-    print("=" * 70)
-
-    test_bullets = [
-        # Should highlight metrics and tech
-        "Lead frontend development for 8-person team—conduct code reviews, establish React/TypeScript standards, and mentor 3 junior developers.",
-
-        # Should highlight performance improvements
-        "Drove UI modernization migrating 5+ legacy apps from jQuery/AngularJS to React/Next.js with TypeScript. Reduced page load times from ~6s to ~3.5s through code splitting and lazy loading.",
-
-        # Should highlight scale and technologies
-        "Built component library (50+ components) with design system and Storybook docs—reduced development time by 30%.",
-
-        # Should highlight technical achievements
-        "Integrated AI messaging system using Google Gemini API with prompt engineering. Generates ~10K personalized messages daily.",
-
-        # Should highlight production incident resolution
-        "Resolved critical production incident: diagnosed Redis connection exhaustion (500+ connections causing degradation), implemented connection pooling with circuit breaker pattern, reduced to ~50 connections.",
-    ]
-
-    for i, bullet in enumerate(test_bullets, 1):
-        print(f"\n{i}. Original bullet:")
-        print(f"   {bullet}")
-
-        # Identify highlights
-        highlights = StrategicHighlighter.identify_highlights(bullet)
-
-        print(f"\n   Should be BOLD (identified {len(highlights)} phrases):")
-        for start, end, text in highlights:
-            print(f"     ✓ '{text}'")
+from src.resume.ai_docx_layout_analyzer import AIDOCXLayoutAnalyzer
+from src.resume.smart_doc_generator import SmartDOCXGenerator
+from src.config import get_config
+from src.utils import setup_logging
 
 
 def test_doc_generation():
-    """Test DOC generation with sample data."""
-    print("\n\n" + "=" * 70)
-    print("TESTING DOC GENERATION")
+    """Test AI-driven DOCX generation with sample data."""
+    print("=" * 70)
+    print("TESTING AI-DRIVEN DOCX GENERATION")
     print("=" * 70)
 
     # Create sample resume data
@@ -122,33 +90,62 @@ def test_doc_generation():
         "location": "Remote"
     }
 
-    print("\n1. Generating DOCX with strategic highlighting...")
+    # Load configuration
+    print("\n1. Loading configuration...")
     try:
-        generator = DOCResumeGenerator()
-        output_path = generator.generate(sample_resume, sample_job, output_dir="output/test")
+        config = get_config("config.yaml")
+        setup_logging(config.log_level, config.log_file)
+        print("   ✓ Configuration loaded")
+    except Exception as e:
+        print(f"   ✗ Error loading config: {e}")
+        print("   Make sure config.yaml exists")
+        return None
 
-        print(f"✓ SUCCESS!")
+    # Initialize AI-driven system
+    print("\n2. Initializing AI-driven DOCX generation system...")
+    try:
+        layout_analyzer = AIDOCXLayoutAnalyzer(config)
+        doc_generator = SmartDOCXGenerator()
+        print("   ✓ AI Layout Analyzer initialized")
+        print("   ✓ Smart DOCX Generator initialized")
+    except Exception as e:
+        print(f"   ✗ Error initializing AI system: {e}")
+        print("   Make sure Vertex AI credentials are configured")
+        return None
+
+    # Generate using AI-driven two-phase system
+    print("\n3. Generating DOCX (AI analysis + rendering)...")
+    try:
+        # Phase 1: AI analyzes resume structure
+        print("   Analyzing resume structure with AI...")
+        layout_plan = layout_analyzer.analyze_and_create_layout(sample_resume, sample_job)
+
+        # Phase 2: Smart renderer creates DOCX
+        print("   Rendering DOCX from AI layout plan...")
+        output_path = doc_generator.generate(sample_resume, sample_job, layout_plan, output_dir="output/test")
+
+        print(f"\n✓ SUCCESS!")
         print(f"\n   Generated: {output_path}")
         print(f"   Location:  {Path(output_path).absolute()}")
-        print(f"\n   File size: {Path(output_path).stat().st_size / 1024:.1f} KB")
+        print(f"   File size: {Path(output_path).stat().st_size / 1024:.1f} KB")
 
-        print("\n2. What to check in the DOCX:")
-        print("   ✓ Strategic highlighting applied:")
-        print("     - Metrics should be BOLD: 8-person team, 30%, ~6s→3.5s, 50+ components")
-        print("     - Technologies should be BOLD: React/TypeScript, Google Gemini API, Redis")
-        print("     - Achievements should be BOLD: AI messaging system, 85%+ coverage")
-        print("     - Action verbs NOT bolded: Built, Led, Drove, Developed")
-        print("\n   ✓ Formatting applied:")
+        print("\n4. What to check in the DOCX:")
+        print("   ✓ AI-discovered sections:")
+        print("     - All sections from resume JSON identified")
+        print("     - Sections ordered by relevance to job")
+        print("     - Field name variations handled (title vs position)")
+        print("\n   ✓ Formatting (enforced by Smart Generator):")
         print("     - Font: Calibri 10.5pt")
         print("     - Name: 18pt bold dark blue")
         print("     - Section headers: 12pt bold dark blue")
         print("     - Context lines: 10pt italic gray")
-        print("     - Proper spacing and margins")
+        print("     - Spacing: Pt(0) after paragraphs, line_spacing=1.0")
+        print("     - Margins: 0.5\" top/bottom, 0.6\" left/right")
         print("\n   ✓ Structure:")
-        print("     - Professional summary with strategic bold")
+        print("     - Professional summary")
         print("     - Technical skills by category")
-        print("     - Experience with context lines")
-        print("     - Tech stack for each job")
+        print("     - Experience with context lines and tech stacks")
+        print("     - Education")
 
         return output_path
 
@@ -160,17 +157,16 @@ def test_doc_generation():
 
 
 if __name__ == "__main__":
-    # Test highlighting logic
-    test_strategic_highlighting()
-
-    # Test DOC generation
+    # Test AI-driven DOCX generation
     doc_path = test_doc_generation()
 
     print("\n" + "=" * 70)
-    print("TESTS COMPLETE")
+    print("TEST COMPLETE")
     print("=" * 70)
     if doc_path:
         print(f"\nOpen the generated file to review:")
         print(f"  open '{doc_path}'")
         print("\nOr use the command:")
         print(f"  open {Path(doc_path).parent}")
+    else:
+        print("\n✗ Test failed - see errors above")

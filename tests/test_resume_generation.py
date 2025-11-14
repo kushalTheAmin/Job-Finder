@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test script for resume generation with transformation guide.
-Tests the new DOC generator and AI prompts locally.
+Tests the new AI-driven DOCX generation system and ATS optimization locally.
 """
 
 import sys
@@ -11,7 +11,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.resume.doc_generator import DOCResumeGenerator
+from src.resume.ai_docx_layout_analyzer import AIDOCXLayoutAnalyzer
+from src.resume.smart_doc_generator import SmartDOCXGenerator
 from src.resume.ats_optimizer import ATSOptimizer
 from src.resume.resume_validator import ResumeValidator
 from src.config import get_config
@@ -85,12 +86,23 @@ def test_resume_generation():
     }
     print(f"✓ Sample job: {sample_job['title']} at {sample_job['company']}")
 
-    # 5. Test DOC generator without AI (basic formatting)
-    print("\n5. Testing basic DOC generation (no AI)...")
+    # 5. Test AI-driven DOCX generation system
+    print("\n5. Testing AI-driven DOCX generation...")
     try:
-        doc_generator = DOCResumeGenerator()
-        basic_doc_path = doc_generator.generate(master_resume, sample_job, output_dir="output/test")
-        print(f"✓ Generated basic DOCX: {basic_doc_path}")
+        # Initialize AI-driven system
+        layout_analyzer = AIDOCXLayoutAnalyzer(config)
+        doc_generator = SmartDOCXGenerator()
+        print("  ✓ AI Layout Analyzer initialized")
+        print("  ✓ Smart DOCX Generator initialized")
+
+        # Generate using two-phase AI process
+        print("  Analyzing resume structure with AI...")
+        layout_plan = layout_analyzer.analyze_and_create_layout(master_resume, sample_job)
+
+        print("  Rendering DOCX from layout plan...")
+        basic_doc_path = doc_generator.generate(master_resume, sample_job, layout_plan, output_dir="output/test")
+
+        print(f"✓ Generated AI-driven DOCX: {basic_doc_path}")
         print(f"  Location: {Path(basic_doc_path).absolute()}")
     except Exception as e:
         print(f"✗ Error generating DOC: {e}")
@@ -137,11 +149,20 @@ def test_resume_generation():
                 print(f"\n  New Summary ({len(new_summary.split())} words):")
                 print(f"  '{new_summary[:200]}...'")
 
-            # Generate optimized DOCX
-            print("\n7. Generating optimized DOCX...")
+            # Generate optimized DOCX using AI-driven system
+            print("\n7. Generating optimized DOCX with AI layout analysis...")
+            print("  Analyzing optimized resume structure...")
+            optimized_layout_plan = layout_analyzer.analyze_and_create_layout(
+                optimized_resume,
+                sample_job,
+                match_analysis
+            )
+
+            print("  Rendering optimized DOCX...")
             optimized_doc_path = doc_generator.generate(
                 optimized_resume,
                 sample_job,
+                optimized_layout_plan,
                 output_dir="output/test"
             )
             print(f"  ✓ Generated optimized DOCX: {optimized_doc_path}")

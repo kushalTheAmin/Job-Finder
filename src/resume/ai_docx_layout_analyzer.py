@@ -57,12 +57,36 @@ class AIDOCXLayoutAnalyzer:
             Layout plan with structured sections ready for rendering
         """
         try:
-            logger.info("AI analyzing resume structure and creating layout plan...")
+            job_title = job.get('title', 'Unknown')
+            job_company = job.get('company', 'Unknown')
+            logger.info("=" * 70)
+            logger.info(f"🤖 AI LAYOUT ANALYZER - Starting analysis for: {job_company} - {job_title}")
+            logger.info("=" * 70)
+
+            # Log resume structure
+            logger.info(f"📄 Input resume structure: {list(resume_data.keys())}")
+
+            # Count sections in input
+            section_counts = {}
+            for key, value in resume_data.items():
+                if isinstance(value, list):
+                    section_counts[key] = f"list[{len(value)}]"
+                elif isinstance(value, dict):
+                    section_counts[key] = f"dict[{len(value)}]"
+                else:
+                    section_counts[key] = type(value).__name__
+            logger.info(f"📊 Section details: {section_counts}")
 
             # Build AI prompt
+            logger.info("🔨 Building AI analysis prompt...")
             prompt = self._build_analysis_prompt(resume_data, job, match_analysis)
 
             # Get AI analysis
+            logger.info("🚀 Calling Vertex AI Gemini for intelligent layout analysis...")
+            logger.info(f"   Model: {self.config.vertex_model}")
+            logger.info(f"   Temperature: 0.3 (consistent, predictable)")
+            logger.info(f"   Max tokens: 4000")
+
             response = self.model.generate_content(
                 prompt,
                 generation_config={
@@ -71,14 +95,41 @@ class AIDOCXLayoutAnalyzer:
                 }
             )
 
+            logger.info("✅ AI response received, parsing layout plan...")
+
             # Parse AI response
             layout_plan = self._parse_ai_response(response.text)
 
-            logger.info(f"Layout plan created with {len(layout_plan.get('sections', []))} sections")
+            # Log what AI discovered
+            sections = layout_plan.get('sections', [])
+            logger.info("=" * 70)
+            logger.info(f"✨ AI DISCOVERED {len(sections)} SECTIONS:")
+            for idx, section in enumerate(sections, 1):
+                section_type = section.get('type', 'unknown')
+                section_title = section.get('title', section.get('type', 'N/A'))
+
+                # Count items in section
+                item_count = ""
+                if 'items' in section:
+                    item_count = f" ({len(section['items'])} items)"
+                elif 'categories' in section:
+                    item_count = f" ({len(section['categories'])} categories)"
+                elif 'content' in section:
+                    content_len = len(str(section['content']))
+                    item_count = f" ({content_len} chars)"
+
+                logger.info(f"   {idx}. [{section_type}] {section_title}{item_count}")
+
+            logger.info("=" * 70)
+            logger.info("✅ Layout plan ready for Smart DOCX Renderer")
+
             return layout_plan
 
         except Exception as e:
-            logger.error(f"Error in AI layout analysis: {str(e)}")
+            logger.error("=" * 70)
+            logger.error(f"❌ ERROR in AI layout analysis: {str(e)}")
+            logger.error("🔄 Falling back to basic structure extraction...")
+            logger.error("=" * 70)
             # Fallback to basic structure
             return self._create_fallback_layout(resume_data)
 
@@ -256,9 +307,12 @@ Output JSON:"""
         Create a basic fallback layout if AI fails.
         Uses simple heuristics to extract common sections.
         """
-        logger.warning("Using fallback layout (AI analysis failed)")
+        logger.warning("=" * 70)
+        logger.warning("⚠️  FALLBACK MODE: Creating basic layout without AI")
+        logger.warning("=" * 70)
 
         sections = []
+        fallback_sections_created = 0
 
         # Header (required)
         personal_info = resume_data.get('personal_info', {})

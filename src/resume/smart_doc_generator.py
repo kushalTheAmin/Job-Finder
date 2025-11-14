@@ -62,27 +62,50 @@ class SmartDOCXGenerator:
             Path to generated DOCX file
         """
         try:
+            job_company = job.get('company', 'Unknown')
+            job_title = job.get('title', 'Unknown')
+
+            logger.info("=" * 70)
+            logger.info(f"📝 SMART DOCX GENERATOR - Starting for: {job_company} - {job_title}")
+            logger.info("=" * 70)
+
             doc = Document()
 
             # Set margins (user's rule)
+            logger.info("📐 Setting document margins (user's perfected rules)")
+            logger.info(f"   Margins: {self.STYLE_MARGINS[0]}\" top/bottom, {self.STYLE_MARGINS[1]}\" left/right")
             self._set_margins(doc)
 
             # Render sections from layout plan
             if layout_plan and 'sections' in layout_plan:
+                logger.info(f"✅ Layout plan received with {len(layout_plan['sections'])} sections")
+                logger.info("🎨 Rendering resume with AI-discovered structure...")
+                logger.info("   STYLING RULES ENFORCED:")
+                logger.info(f"   • space_after = {self.STYLE_SPACE_AFTER} (no extra spacing)")
+                logger.info(f"   • line_spacing = {self.STYLE_LINE_SPACING} (single spacing)")
+                logger.info(f"   • Font = {self.STYLE_FONT}")
+                logger.info(f"   • Single paragraphs with \\n line breaks")
+                logger.info("-" * 70)
+
                 self._render_from_layout_plan(doc, layout_plan, resume_data)
             else:
-                # Fallback: use old method (shouldn't happen with AI analyzer)
-                logger.warning("No layout plan provided, using fallback rendering")
+                # Fallback: shouldn't happen with AI analyzer
+                logger.warning("❌ No layout plan provided! Using emergency fallback")
                 self._render_fallback(doc, resume_data)
 
             # Save file
             output_path = self._save_document(doc, resume_data, job)
 
-            logger.info(f"Generated DOCX resume: {output_path}")
+            logger.info("=" * 70)
+            logger.info(f"✅ DOCX GENERATION COMPLETE: {output_path.name}")
+            logger.info("=" * 70)
+
             return str(output_path)
 
         except Exception as e:
-            logger.error(f"Error generating DOCX: {str(e)}")
+            logger.error("=" * 70)
+            logger.error(f"❌ ERROR generating DOCX: {str(e)}")
+            logger.error("=" * 70)
             raise
 
     def _set_margins(self, doc: Document):
@@ -465,19 +488,44 @@ class SmartDOCXGenerator:
         header_para.line_spacing = self.STYLE_LINE_SPACING  # 1.0
 
     def _render_fallback(self, doc: Document, resume_data: Dict):
-        """Fallback rendering if no layout plan (uses basic structure)."""
-        logger.warning("Using fallback rendering - layout plan missing")
+        """
+        Fallback rendering if no layout plan.
+        Creates basic structure from resume_data.
+        """
+        logger.error("NO LAYOUT PLAN PROVIDED! This should never happen with AI analyzer.")
+        logger.error("Creating emergency fallback structure...")
 
-        # Basic structure
-        from .doc_generator import DOCResumeGenerator
-        old_gen = DOCResumeGenerator()
+        # Emergency fallback - render basic sections
+        # Header
+        if 'personal_info' in resume_data or 'name' in resume_data:
+            personal_info = resume_data.get('personal_info', {})
+            header_data = {
+                'name': personal_info.get('name', resume_data.get('name', '')),
+                'email': personal_info.get('email', resume_data.get('email', '')),
+                'phone': personal_info.get('phone', resume_data.get('phone', '')),
+                'linkedin': personal_info.get('linkedin', resume_data.get('linkedin', '')),
+                'location': personal_info.get('location', resume_data.get('location', ''))
+            }
+            self._render_header(doc, header_data)
+            logger.warning("Fallback: Rendered header")
 
-        # Use old methods as fallback
-        old_gen._add_header(doc, resume_data)
-        old_gen._add_technical_skills(doc, resume_data)
-        old_gen._add_experience(doc, resume_data)
-        old_gen._add_education(doc, resume_data)
-        old_gen._add_certifications(doc, resume_data)
+        # Skills
+        skills = resume_data.get('technical_skills', resume_data.get('skills', {}))
+        if skills and isinstance(skills, dict):
+            self._render_skills_dict(doc, {'title': 'TECHNICAL SKILLS', 'categories': skills})
+            logger.warning("Fallback: Rendered skills")
+
+        # Experience
+        if 'experience' in resume_data:
+            self._render_experience_list(doc, {'title': 'PROFESSIONAL EXPERIENCE', 'items': resume_data['experience']})
+            logger.warning("Fallback: Rendered experience")
+
+        # Education
+        if 'education' in resume_data:
+            self._render_education_list(doc, {'title': 'EDUCATION', 'items': resume_data['education']})
+            logger.warning("Fallback: Rendered education")
+
+        logger.error("Fallback rendering complete - but AI Layout Analyzer should be used!")
 
     def _save_document(self, doc: Document, resume_data: Dict, job: Dict) -> Path:
         """Save document and return path."""

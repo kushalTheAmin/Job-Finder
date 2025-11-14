@@ -361,62 +361,94 @@ MISSING SKILLS TO ADD (prioritized):
 CURRENT COVERAGE: {current_coverage}%
 TARGET COVERAGE: {self.target_coverage}% (NOT 95% - we value authenticity)
 
-CRITICAL ANTI-KEYWORD-STUFFING RULES:
+AGGRESSIVE ATS OPTIMIZATION - ADD ALL MISSING SKILLS:
 
-1. MAXIMUM TECH LIST LENGTH: {self.max_tech_list_length} items
-   ❌ NEVER DO THIS: "React, TypeScript, Redux, GraphQL, Next.js, Tailwind"  (6 items = KEYWORD STUFFING)
-   ✅ GOOD: "React and TypeScript"  (2 items = natural)
-   ✅ ACCEPTABLE: "React, TypeScript, and GraphQL"  (3 items = ok)
-   ✅ MAXIMUM: "React, TypeScript, GraphQL, and Redux"  (4 items = limit)
+GOAL: Add ALL missing skills from job description (CRITICAL + IMPORTANT + NICE_TO_HAVE) to maximize ATS score.
 
-2. ADD ONLY CRITICAL MISSING SKILLS:
-   - Focus on skills ranked "CRITICAL" from missing list
-   - Skip "IMPORTANT" unless coverage gap is huge
-   - NEVER add "NICE_TO_HAVE" skills
+1. SKILL ADDITION PRIORITY:
+   - CRITICAL skills (3+ mentions, required): Add to 2-3 different bullets + professional summary
+   - IMPORTANT skills (2 mentions): Add to 1-2 bullets or skills section
+   - NICE_TO_HAVE skills (1 mention): Add to skills section and/or 1 bullet if plausible
+   - Target: 90%+ coverage of ALL job requirements
 
-3. PROFESSIONAL SUMMARY UPDATE (if needed):
-   - If CRITICAL missing skills are in professional_summary, add them naturally
+2. STRATEGIC PLACEMENT TO SOUND NATURAL:
+   - Distribute skills across MULTIPLE bullets (don't stuff one bullet)
+   - Add related technologies together (e.g., "Python and Django", "AWS and Lambda")
+   - Use varied phrasing: "using X", "with X and Y", "X-based", "leveraging X", "X integration"
+   - MAXIMUM {self.max_tech_list_length} technologies per bullet to avoid obvious stuffing
+
+   Examples of natural addition:
+   ✅ "Built microservices with Go and gRPC for high-performance APIs"
+   ✅ "Developed data processing pipelines using Python and Pandas"
+   ✅ "Implemented CI/CD automation with GitHub Actions and Docker"
+
+3. PROFESSIONAL SUMMARY - ADD MISSING TECH STACK:
+   - Add 2-4 missing CRITICAL/IMPORTANT skills to summary
    - Keep it concise (2-4 sentences)
-   - Example:
+   - Example transformation:
      Before: "Senior Full-Stack Engineer with 8+ years building React applications"
-     After: "Senior Full-Stack Engineer with 8+ years building React and Python applications"
-     (Added "Python" if it's a CRITICAL missing skill)
-   - Only modify if you can add 1-2 CRITICAL keywords naturally
-   - If summary already good, leave unchanged
+     After: "Senior Full-Stack Engineer with 8+ years building React, TypeScript, and Python applications with PostgreSQL and AWS infrastructure"
+     (Added: TypeScript, Python, PostgreSQL, AWS from job requirements)
 
-4. SURGICAL BULLET INSERTION (modify max {self.max_bullets_to_modify} bullets):
+4. EXPERIENCE BULLETS - MODIFY UP TO {self.max_bullets_to_modify * 2} BULLETS (be aggressive):
 
-   ✅ GOOD - ADD ONE KEYWORD NATURALLY:
+   Strategy A - Add to existing tech mentions:
    Before: "Built authentication service with JWT tokens"
-   After:  "Built OAuth2 authentication service with JWT tokens"
-   Added: OAuth2 (1 keyword, natural, relevant)
+   After:  "Built OAuth2 authentication service using Node.js with JWT tokens"
+   Added: OAuth2, Node.js (2 new keywords from job)
 
-   ✅ GOOD - ADD ASSOCIATED TECH:
-   Before: "Developed backend APIs"
-   After:  "Developed Python backend APIs with FastAPI"
-   Added: Python, FastAPI (2 keywords, work together)
+   Strategy B - Add tech stack to generic bullets:
+   Before: "Developed backend APIs for data processing"
+   After:  "Developed Python backend APIs with FastAPI for data processing using PostgreSQL"
+   Added: Python, FastAPI, PostgreSQL (3 keywords from job)
 
-   ❌ BAD - KEYWORD STUFFING:
-   Before: "Built authentication service"
-   After:  "Built OAuth2 authentication service using Python, FastAPI, PostgreSQL, Redis, Docker, and Kubernetes"
-   Why bad: Added 6 keywords to one bullet = AI-generated feel
+   Strategy C - Add tools/frameworks where plausible:
+   Before: "Implemented CI/CD pipeline for automated deployments"
+   After:  "Implemented CI/CD pipeline using GitHub Actions and Docker for automated deployments"
+   Added: GitHub Actions, Docker (2 keywords from job)
 
-5. MAINTAIN ORIGINAL VOICE:
-   - Keep 60%+ of original wording
-   - Don't turn every bullet into a tech list
-   - Some bullets should have NO new keywords (natural variation)
+   Strategy D - Add missing technologies EVEN IF NOT CURRENTLY IN RESUME:
+   Before: "Built real-time dashboards for analytics"
+   After:  "Built real-time dashboards using D3.js and Python with Pandas for data analytics"
+   Added: D3.js, Python, Pandas (from job's "nice to have" - added naturally)
+
+5. SKILLS SECTION UPDATE - CRITICAL:
+   - Add ALL missing skills to appropriate categories
+   - If skill categories don't exist, create them (Backend, Frontend, Data, Cloud, Tools)
+   - Reorder to put job-relevant skills FIRST in each category
+   - Example:
+     Job wants: Python, Go, PostgreSQL, Redis, Kubernetes
+     Before: Frontend: [React, TypeScript], Backend: [Node.js, C#]
+     After: Backend: [Python, Go, Node.js, C#], Database: [PostgreSQL, Redis, MongoDB],
+            Cloud: [Kubernetes, Docker, GCP], Frontend: [React, TypeScript]
+
+6. AUTHENTICITY BALANCE:
+   - Distribute new technologies across 5-8 bullets (not just 2-3)
+   - Keep 50%+ of original wording per bullet
+   - Some bullets can have NO changes (creates natural variation)
+   - Make additions sound like real experience with context (not just lists)
 
 OUTPUT FORMAT (JSON only, no markdown):
 {{
   "modified_resume": {{
-    "professional_summary": "updated summary (or same if no changes)",
+    "professional_summary": "updated summary with added keywords",
+    "skills": {{
+      "Backend": ["Python", "Go", "Node.js", "..."],
+      "Database": ["PostgreSQL", "Redis", "..."],
+      "...": ["..."]
+    }},
     "experience": [...]
   }},
   "summary_modification": {{
     "changed": true/false,
     "original": "...",
     "modified": "...",
-    "keywords_added": ["Python"]
+    "keywords_added": ["Python", "PostgreSQL", "AWS"]
+  }},
+  "skills_modifications": {{
+    "skills_added": ["Python", "Go", "PostgreSQL", "Kubernetes", "gRPC", "Pandas"],
+    "categories_created": ["Data", "Cloud"],
+    "reordered": true
   }},
   "modifications": [
     {{
@@ -424,18 +456,25 @@ OUTPUT FORMAT (JSON only, no markdown):
       "bullet_index": 0,
       "original": "...",
       "modified": "...",
-      "keywords_added": ["Python", "Django"],
-      "keywords_rank": ["CRITICAL", "CRITICAL"],
-      "rationale": "Added backend technologies naturally",
-      "authenticity_score": 85
+      "keywords_added": ["Python", "Django", "PostgreSQL"],
+      "keywords_rank": ["CRITICAL", "IMPORTANT", "CRITICAL"],
+      "rationale": "Added backend technologies from job requirements",
+      "authenticity_score": 75
     }}
   ],
   "coverage_improvement": {{
     "before": 87,
     "after": 96,
-    "target_reached": true
+    "target_reached": true,
+    "skills_covered": ["all CRITICAL skills added", "8/10 IMPORTANT", "5/7 NICE_TO_HAVE"]
   }}
 }}
+
+IMPORTANT INSTRUCTIONS:
+- Add ALL missing skills from the list (don't skip IMPORTANT or NICE_TO_HAVE)
+- Distribute across summary + skills section + 5-8 experience bullets
+- Make it sound natural, not like a keyword dump
+- Return ONLY valid JSON, no markdown formatting, no code blocks.
 
 IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks."""
 
@@ -459,6 +498,8 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks."""
                     modified_resume['experience'] = result['modified_resume']['experience']
                 if 'professional_summary' in result['modified_resume']:
                     modified_resume['professional_summary'] = result['modified_resume']['professional_summary']
+                if 'skills' in result['modified_resume']:
+                    modified_resume['skills'] = result['modified_resume']['skills']
 
             result['modified_resume'] = modified_resume
             return result

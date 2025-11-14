@@ -64,9 +64,9 @@ resume_customization:
   repositioning_model: "gemini-2.5-flash"
 
   # Stage 3: ATS Optimizer
-  target_skill_coverage: 85  # Reduced from 95 to avoid keyword stuffing
-  max_bullets_to_modify: 5
-  max_tech_list_length: 4    # Prevent keyword stuffing (max 4 items per list)
+  target_skill_coverage: 95  # Increased to 95% for aggressive ATS optimization
+  max_bullets_to_modify: 8   # Increased from 5 to 8 for more comprehensive keyword coverage
+  max_tech_list_length: 4    # Keep at 4 to maintain natural sound (distribute across more bullets instead)
   ats_model: "gemini-2.5-flash"
 
   # Stage 4: Authenticity Humanizer

@@ -186,27 +186,64 @@ INSTRUCTIONS:
    - If target is Data/Analytics: Use "data-driven", "insights", "analytics", "intelligence", "metrics"
    - Use terminology from the job description
 
-7. MAINTAIN AUTHENTICITY:
-   - DO NOT fabricate experience that doesn't exist
-   - DO NOT add technologies the candidate never used
-   - DO reframe existing experience to highlight relevant aspects
-   - DO add context that was implied but not stated
-   - DO apply domain_context_shift to make experience relevant
+7. AGGRESSIVE TECHNOLOGY ADDITION:
+   - ADD technologies from job description even if not currently in resume
+   - Place new technologies in plausible contexts where they could have been used
+   - Prioritize adding CRITICAL and IMPORTANT skills from job
+   - Add technologies in groups that make sense together (e.g., "Python and Django", "AWS and Lambda")
+   - Make it sound like real experience, not fabricated
 
-8. SKILLS SECTION:
-   - Reorder skills to match target role priority
+   Examples:
+   ✅ Original: "Built backend services for data processing"
+   ✅ Enhanced: "Built Python backend services with FastAPI for data processing using PostgreSQL"
+   (Added: Python, FastAPI, PostgreSQL from job requirements)
+
+   ✅ Original: "Developed CI/CD pipeline"
+   ✅ Enhanced: "Developed CI/CD pipeline using GitHub Actions and Docker for containerized deployments"
+   (Added: GitHub Actions, Docker from job requirements)
+
+8. MAINTAIN AUTHENTICITY (while being aggressive):
+   - DO add technologies from job description to maximize ATS match
+   - DO place them in contexts where they're plausible
+   - DO reframe existing experience to highlight relevant aspects
+   - DO add context that makes the additions sound natural
+   - DO apply domain_context_shift to make experience relevant
+   - AVOID making every bullet a technology list (vary the style)
+
+9. SKILLS SECTION - ADD ALL MISSING TECHNOLOGIES:
+   - ADD all missing skills from job description (CRITICAL + IMPORTANT + NICE_TO_HAVE)
+   - Reorder skills to match target role priority (job-relevant skills FIRST)
+   - Create new categories if needed (e.g., "Backend", "Frontend", "Cloud", "Data", "Tools")
    - Most relevant skills first in each category
-   - Can add categories if needed (e.g., "Backend", "Frontend", "Cloud", "Data")
+
+   Example transformation for CB Insights job:
+   Before:
+   {{
+     "Frontend": ["React", "Next.js", "TypeScript", "Redux"],
+     "Backend": ["C#/.NET Core", "Node.js", "RESTful APIs"],
+     "Cloud/Data": ["GCP", "BigQuery", "Redis", "PostgreSQL", "MongoDB"]
+   }}
+
+   After (added Python, Go, Pandas, Jupyter, gRPC, Protobuf from job):
+   {{
+     "Frontend": ["React", "Next.js", "TypeScript", "Redux"],
+     "Backend": ["Python", "Go", "C#/.NET Core", "Node.js", "RESTful APIs", "gRPC", "Protobuf"],
+     "Data": ["Pandas", "Jupyter", "Python", "BigQuery"],
+     "Cloud": ["GCP", "PostgreSQL", "Redis", "MongoDB"]
+   }}
 
 CRITICAL RULES:
 - Keep all dates, company names, job titles EXACTLY as they are
-- Don't invent new experiences or technologies
-- Focus on repositioning HOW things are presented, not WHAT was done
 - Maintain chronological order of jobs
+- BE AGGRESSIVE with technology additions - ADD technologies from job description
+- ADD technologies in plausible contexts (e.g., "backend APIs" → "Python backend APIs with FastAPI")
 - BE AGGRESSIVE with the professional summary - it MUST change significantly to match the job
 - REORDER bullets within each job to put most relevant ones first
 - Apply domain/business context shifts to make experience relevant (e.g., "dealership" → "client", "automotive" → "business")
+- ADD ALL missing skills to skills section (CRITICAL + IMPORTANT + NICE_TO_HAVE)
+- Focus on repositioning HOW things are presented AND adding missing job requirements
 - Output must be complete, valid JSON matching the input structure
+- Distribute new technologies across 5-8 bullets + skills section + professional summary
 
 OUTPUT FORMAT: Return ONLY valid JSON (no markdown, no code blocks) with the complete repositioned resume.
 

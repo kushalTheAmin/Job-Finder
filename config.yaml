@@ -141,8 +141,7 @@ notifications:
 sources:
   # Enable/disable job sources
   enabled:
-    - "linkedin"
-    - "indeed"
+    - "jsearch"
 
   # API keys and configuration
   adzuna:
@@ -157,6 +156,17 @@ sources:
     use_proxy: false
     max_pages: 3
     delay_between_requests: 2  # seconds
+
+    # LinkedIn cookie authentication (optional but recommended for better success rate)
+    # To get cookies:
+    # 1. Log into LinkedIn in your browser
+    # 2. Open DevTools (F12) > Application > Cookies > https://www.linkedin.com
+    # 3. Copy the values below
+    # Note: Cookies expire after ~60 days, you'll need to refresh them
+    linkedin_cookies:
+      li_at: "AQEDAR8lGt4FZk_PAAABmn8JqfgAAAGaoxYt-E0AWig6d0309xilP2oZtPysCCTNXK5TNh-8l0YlquB1ZzvBA62hK7WVG-KYJ69PkDPgCpZ_riaSBXS6QN7NsZBs5nzayuIDbwwkJ85ILUQJxn-rv69F"
+      JSESSIONID: "ajax:4985279563848296224"
+      bcookie: "v=2&365798d7-5f91-44a8-8f7c-47009e0e2f63"
 
 google_cloud:
   # Google Cloud Project ID (uses GOOGLE_CLOUD_PROJECT from .env)

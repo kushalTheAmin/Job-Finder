@@ -1,6 +1,7 @@
 """JSearch (RapidAPI) job scraper."""
 
 import requests
+import time
 from typing import List, Dict, Any
 from . import BaseScraper
 
@@ -69,15 +70,42 @@ class JSearchScraper(BaseScraper):
             return []
 
     def _parse_response(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Parse JSearch API response."""
+        """Parse JSearch API response and fetch full job details."""
         jobs = []
 
-        for result in data.get('data', []):
+        results = data.get('data', [])
+        total_results = len(results)
+
+        for idx, result in enumerate(results, 1):
+            title = result.get('job_title', '')
+            job_id = result.get('job_id', '')
+
+            # Get description from search endpoint
+            search_description = self._clean_description(result.get('job_description', ''))
+
+            # Try to fetch fuller description from job-details endpoint
+            full_description = self._fetch_job_details(job_id, title) if job_id else ""
+
+            # Use the longer/better description
+            description = full_description if full_description else search_description
+
+            # Log which source we used
+            if full_description:
+                full_words = len(full_description.split())
+                search_words = len(search_description.split())
+                if full_words > search_words:
+                    self.logger.info(f"✓ Details endpoint has more content ({full_words} vs {search_words} words) for: {title}")
+                else:
+                    self.logger.debug(f"Details endpoint similar length for: {title}")
+            else:
+                search_words = len(search_description.split())
+                self.logger.warning(f"Using search description ({search_words} words) for: {title}")
+
             job = {
-                'title': result.get('job_title', ''),
+                'title': title,
                 'company': result.get('employer_name', ''),
                 'location': self._format_location(result),
-                'description': self._clean_description(result.get('job_description', '')),
+                'description': description,
                 'url': result.get('job_apply_link', ''),
                 'posted_date': result.get('job_posted_at_datetime_utc', ''),
                 'salary': self._format_salary(result),
@@ -88,7 +116,50 @@ class JSearchScraper(BaseScraper):
             if self._is_valid_job(job):
                 jobs.append(job)
 
+            # Rate limiting: delay between API calls
+            # Skip delay for last job
+            if idx < total_results:
+                time.sleep(0.5)
+
         return jobs
+
+    def _fetch_job_details(self, job_id: str, job_title: str) -> str:
+        """
+        Fetch full job details from JSearch /job-details endpoint.
+
+        The search endpoint may return shorter descriptions, while the
+        job-details endpoint provides complete job postings.
+        """
+        if not job_id or not self.api_key:
+            return ""
+
+        try:
+            url = "https://jsearch.p.rapidapi.com/job-details"
+            headers = {
+                'X-RapidAPI-Key': self.api_key,
+                'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+            }
+            params = {'job_id': job_id}
+
+            self.logger.debug(f"Fetching details for job ID: {job_id}")
+
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response.raise_for_status()
+
+            data = response.json()
+            details = data.get('data', [])
+
+            if details and len(details) > 0:
+                detail = details[0]
+                description = detail.get('job_description', '')
+                if description:
+                    return self._clean_description(description)
+
+            return ""
+
+        except Exception as e:
+            self.logger.debug(f"Could not fetch details for {job_title}: {str(e)}")
+            return ""
 
     def _format_location(self, result: Dict[str, Any]) -> str:
         """Format location information."""

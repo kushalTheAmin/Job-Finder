@@ -132,11 +132,11 @@ class IndeedScraper(BaseScraper):
         salary_elem = card.find('div', class_=re.compile(r'salary-snippet'))
         salary = salary_elem.text.strip() if salary_elem else ''
 
-        # Extract snippet/description
+        # Extract snippet/description (fallback)
         snippet_elem = card.find('div', class_=re.compile(r'job-snippet'))
         if not snippet_elem:
             snippet_elem = card.find('div', {'data-testid': 'job-snippet'})
-        description = snippet_elem.text.strip() if snippet_elem else f"{title} position at {company}"
+        snippet_description = snippet_elem.text.strip() if snippet_elem else f"{title} position at {company}"
 
         # Extract job type
         metadata = card.find('div', class_=re.compile(r'metadata'))
@@ -145,6 +145,18 @@ class IndeedScraper(BaseScraper):
             job_type = 'Part-time'
         elif metadata and 'contract' in metadata.text.lower():
             job_type = 'Contract'
+
+        # Fetch full description from job page
+        description = snippet_description
+        if url:
+            job_id = self._extract_job_id(url)
+            if job_id:
+                full_description = self._fetch_full_description(job_id, title)
+                if full_description:
+                    description = full_description
+                else:
+                    snippet_words = len(snippet_description.split())
+                    self.logger.warning(f"Using snippet ({snippet_words} words) for: {title}")
 
         # Create job object
         job = {
@@ -160,3 +172,63 @@ class IndeedScraper(BaseScraper):
         }
 
         return job
+
+    def _extract_job_id(self, url: str) -> str:
+        """Extract job ID from Indeed URL."""
+        match = re.search(r'jk=([a-zA-Z0-9]+)', url)
+        return match.group(1) if match else ""
+
+    def _fetch_full_description(self, job_id: str, job_title: str) -> str:
+        """
+        Fetch full job description from Indeed viewjob page.
+
+        Search results only show snippets (~20-50 words), but the viewjob
+        endpoint contains the full job description.
+        """
+        if not job_id:
+            return ""
+
+        try:
+            # Construct viewjob URL
+            url = f"https://www.indeed.com/viewjob?viewtype=embedded&jk={job_id}"
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+
+            self.logger.debug(f"Fetching full description for job ID: {job_id}")
+
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Indeed's job description is typically in #jobDescriptionText
+            desc_elem = soup.find('div', {'id': 'jobDescriptionText'})
+
+            if not desc_elem:
+                # Fallback selectors
+                desc_elem = soup.find('div', class_=re.compile(r'jobsearch-jobDescriptionText'))
+
+            if desc_elem:
+                description = desc_elem.get_text(separator='\n', strip=True)
+                if description and len(description) > 100:
+                    word_count = len(description.split())
+                    self.logger.info(f"✓ Got full description ({word_count} words) for: {job_title}")
+
+                    # Rate limiting: delay after successful fetch
+                    time.sleep(1)
+
+                    return description
+                else:
+                    self.logger.warning(f"✗ Description too short for: {job_title}")
+                    return ""
+            else:
+                self.logger.warning(f"✗ Could not find description element for: {job_title}")
+                return ""
+
+        except Exception as e:
+            self.logger.warning(f"✗ Error fetching job {job_id}: {str(e)}")
+            return ""

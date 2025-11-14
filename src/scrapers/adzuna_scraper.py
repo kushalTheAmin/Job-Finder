@@ -2,6 +2,8 @@
 
 import requests
 from typing import List, Dict, Any
+from bs4 import BeautifulSoup
+import time
 from . import BaseScraper
 
 
@@ -78,26 +80,111 @@ class AdzunaScraper(BaseScraper):
             return 'us'  # Default to US
 
     def _parse_response(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Parse Adzuna API response."""
+        """Parse Adzuna API response and fetch full descriptions."""
         jobs = []
 
-        for result in data.get('results', []):
+        results = data.get('results', [])
+        total_results = len(results)
+
+        for idx, result in enumerate(results, 1):
+            title = result.get('title', '')
+            company = result.get('company', {}).get('display_name', '')
+            redirect_url = result.get('redirect_url', '')
+
+            # API returns snippet (50-100 words), fetch full description from redirect_url
+            snippet_description = self._clean_description(result.get('description', ''))
+            full_description = self._fetch_full_description_from_redirect(redirect_url, title)
+
+            # Use full description if available, otherwise fallback to snippet
+            description = full_description if full_description else snippet_description
+
+            if not full_description:
+                snippet_words = len(snippet_description.split())
+                self.logger.warning(f"Using snippet ({snippet_words} words) for: {title}")
+
             job = {
-                'title': result.get('title', ''),
-                'company': result.get('company', {}).get('display_name', ''),
+                'title': title,
+                'company': company,
                 'location': result.get('location', {}).get('display_name', ''),
-                'description': self._clean_description(result.get('description', '')),
-                'url': result.get('redirect_url', ''),
+                'description': description,
+                'url': redirect_url,
                 'posted_date': result.get('created', ''),
                 'salary': self._format_salary(result),
                 'job_type': result.get('contract_time', ''),
-                'remote': 'remote' in result.get('description', '').lower(),
+                'remote': 'remote' in description.lower(),
             }
 
             if self._is_valid_job(job):
                 jobs.append(job)
 
+            # Rate limiting: delay between fetches to avoid blocking
+            # Skip delay for last job
+            if idx < total_results:
+                time.sleep(1)
+
         return jobs
+
+    def _fetch_full_description_from_redirect(self, redirect_url: str, job_title: str) -> str:
+        """
+        Fetch full job description from Adzuna redirect URL.
+
+        The API only returns snippets (~50-100 words), but the redirect_url
+        contains the full job posting.
+        """
+        if not redirect_url:
+            return ""
+
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+
+            self.logger.debug(f"Fetching full description from: {redirect_url[:80]}...")
+
+            response = requests.get(redirect_url, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Try multiple selectors for job description
+            # Adzuna pages may have different structures depending on the source
+            description = None
+
+            # Try common job description selectors
+            selectors = [
+                ('div', {'class': 'job-description'}),
+                ('section', {'class': 'job-details'}),
+                ('div', {'id': 'job-description'}),
+                ('div', {'class': 'description'}),
+                ('article', {'class': 'job-content'}),
+            ]
+
+            for tag, attrs in selectors:
+                desc_elem = soup.find(tag, attrs)
+                if desc_elem:
+                    description = desc_elem.get_text(separator='\n', strip=True)
+                    if len(description) > 100:  # Ensure we got substantial content
+                        break
+
+            # Fallback: look for any large text block if specific selectors fail
+            if not description or len(description) < 100:
+                # Find all paragraphs and concatenate
+                paragraphs = soup.find_all('p')
+                description = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20)
+
+            if description and len(description) > 100:
+                word_count = len(description.split())
+                self.logger.info(f"✓ Got full description ({word_count} words) for: {job_title}")
+                return self._clean_description(description)
+            else:
+                self.logger.warning(f"✗ Could not extract full description from redirect for: {job_title}")
+                return ""
+
+        except Exception as e:
+            self.logger.warning(f"✗ Error fetching redirect URL for {job_title}: {str(e)}")
+            return ""
 
     def _format_salary(self, result: Dict[str, Any]) -> str:
         """Format salary information."""

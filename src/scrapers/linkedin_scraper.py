@@ -115,12 +115,32 @@ class LinkedInScraper(BaseScraper):
         date_elem = card.find('time')
         posted_date = date_elem.get('datetime', '') if date_elem else ''
 
+        # Default description (fallback)
+        description = f"LinkedIn job posting for {title} at {company}"
+
+        # Fetch full job description from job page
+        if url:
+            self.logger.debug(f"Fetching full description for: {title} at {company}")
+            try:
+                details = self.get_job_details(url)
+                if details.get('description'):
+                    description = details['description']
+                    word_count = len(description.split())
+                    self.logger.info(f"✓ Got full description ({word_count} words) for: {title}")
+                else:
+                    self.logger.warning(f"✗ Could not fetch full description for: {title}, using placeholder")
+
+                # Rate limiting: delay between detail fetches to avoid blocking
+                time.sleep(1)
+            except Exception as e:
+                self.logger.warning(f"✗ Error fetching description for {title}: {str(e)}, using placeholder")
+
         # Create job object
         job = {
             'title': title,
             'company': company,
             'location': location,
-            'description': f"LinkedIn job posting for {title} at {company}",  # Summary description
+            'description': description,
             'url': url,
             'posted_date': posted_date,
             'salary': '',

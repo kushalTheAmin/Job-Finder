@@ -19,7 +19,8 @@ from src.scrapers.aggregator import JobAggregator
 from src.matcher.job_matcher import JobMatcher
 from src.resume.smart_customizer import SmartResumeCustomizer
 from src.resume.interview_prep import InterviewPrepGenerator
-from src.resume.doc_generator import DOCResumeGenerator
+from src.resume.ai_docx_layout_analyzer import AIDOCXLayoutAnalyzer
+from src.resume.smart_doc_generator import SmartDOCXGenerator
 from src.storage.firestore_db import FirestoreDB
 from src.storage.gdrive import GoogleDriveUploader
 from src.notifier.email_sender import EmailSender
@@ -51,7 +52,8 @@ class JobFinderOrchestrator:
         self.job_matcher = JobMatcher(self.config, self.master_resume)
         self.resume_customizer = SmartResumeCustomizer(self.config, self.master_resume)
         self.interview_prep_gen = InterviewPrepGenerator()
-        self.doc_generator = DOCResumeGenerator()
+        self.layout_analyzer = AIDOCXLayoutAnalyzer(self.config)
+        self.doc_generator = SmartDOCXGenerator()
         self.firestore = FirestoreDB(self.config)
         self.drive_uploader = GoogleDriveUploader(
             self.config.google_drive_folder_id
@@ -60,6 +62,7 @@ class JobFinderOrchestrator:
 
         logger.info("All components initialized successfully")
         logger.info("Using Smart Resume Customizer with coherence validation")
+        logger.info("Using AI-driven DOCX generation with flexible layout analysis")
 
     def run(self) -> Dict[str, Any]:
         """Execute the main job finding pipeline."""
@@ -195,8 +198,16 @@ class JobFinderOrchestrator:
                         f.write(prep_text)
                     logger.info(f"  Generated interview prep guide: {prep_file_path.name}")
 
-                # Generate DOCX
-                docx_path = self.doc_generator.generate(customized_resume, job)
+                # Generate DOCX with AI layout analysis
+                # AI analyzes JSON structure and creates flexible layout plan
+                layout_plan = self.layout_analyzer.analyze_and_create_layout(
+                    customized_resume,
+                    job,
+                    job.get('match_analysis', {})
+                )
+
+                # Smart renderer applies layout plan with enforced styling rules
+                docx_path = self.doc_generator.generate(customized_resume, job, layout_plan)
                 resume_files.append(docx_path)
 
                 logger.info(f"✓ Generated resume: {Path(docx_path).name}")

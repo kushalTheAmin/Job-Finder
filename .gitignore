@@ -14,6 +14,8 @@ dist/
 # Environment variables
 .env
 *.env
+*.env.yaml
+.env.yaml
 
 # Google Cloud
 service-account-key.json
@@ -52,6 +54,7 @@ deploy/src/
 deploy/data/
 deploy/config.yaml
 deploy/.env
+deploy/.env.yaml
 
 # Test artifacts
 .pytest_cache/

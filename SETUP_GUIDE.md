@@ -202,6 +202,12 @@ You'll need several API keys. All of these are FREE for the usage levels this pr
 
 **Important**: This password lets apps send emails from your Gmail. Keep it secret!
 
+**For Cloud Deployment**: When deploying to Google Cloud Functions, you'll need to create a `.env.yaml` file in the `deploy/` directory:
+1. Copy the template file: `cp deploy/.env.yaml.template deploy/.env.yaml`
+2. Edit `deploy/.env.yaml` with your actual credentials
+3. The `.env.yaml` file is already in `.gitignore` to prevent accidental commits
+4. NEVER commit `.env.yaml` to Git - it contains your actual passwords!
+
 ### 2.4: Google Drive Folder ID (Resume Storage)
 
 1. Go to [https://drive.google.com](https://drive.google.com)

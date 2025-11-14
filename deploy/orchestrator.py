@@ -24,6 +24,14 @@ from src.resume.interview_prep import InterviewPrepGenerator
 from src.resume.doc_generator import DOCResumeGenerator
 from src.resume.resume_modifier import ResumeModifier
 from src.resume.resume_validator import ResumeValidator
+
+# AI Resume Intelligence Pipeline (6 stages)
+from src.resume.role_intelligence_analyzer import RoleIntelligenceAnalyzer
+from src.resume.narrative_repositioner import NarrativeRepositioner
+from src.resume.authenticity_humanizer import AuthenticityHumanizer
+from src.resume.ai_quality_validator import AIQualityValidator
+from src.resume.final_polisher import FinalPolisher
+
 from src.storage.firestore_db import FirestoreDB
 from src.storage.gdrive import GoogleDriveUploader
 from src.notifier.email_sender import EmailSender
@@ -62,12 +70,42 @@ class JobFinderOrchestrator:
             location=self.config.vertex_location
         )
         ai_model = GenerativeModel(self.config.vertex_model)
-        self.ats_optimizer = ATSOptimizer(self.config, ai_model)
-        target_coverage = self.config.get('resume_customization', 'target_skill_coverage', default=95)
-        logger.info(f"Using AI-Powered ATS Optimizer (target: {target_coverage}% coverage)")
+
+        # AI Resume Intelligence Pipeline - 6 Stages
+        enable_pipeline = self.config.get('resume_customization', 'enable_ai_pipeline', default=True)
+        if enable_pipeline:
+            logger.info("=" * 60)
+            logger.info("AI RESUME INTELLIGENCE PIPELINE")
+            logger.info("=" * 60)
+
+            self.role_analyzer = RoleIntelligenceAnalyzer(self.config)
+            logger.info("✓ Stage 1: Role Intelligence Analyzer")
+
+            self.narrative_repositioner = NarrativeRepositioner(self.config)
+            logger.info("✓ Stage 2: Narrative Repositioner")
+
+            self.ats_optimizer = ATSOptimizer(self.config, ai_model)
+            target_coverage = self.config.get('resume_customization', 'target_skill_coverage', default=85)
+            logger.info(f"✓ Stage 3: ATS Optimizer (target: {target_coverage}% coverage)")
+
+            self.authenticity_humanizer = AuthenticityHumanizer(self.config)
+            logger.info("✓ Stage 4: Authenticity Humanizer")
+
+            self.ai_quality_validator = AIQualityValidator(self.config)
+            logger.info("✓ Stage 5: AI Quality Validator")
+
+            self.final_polisher = FinalPolisher(self.config)
+            logger.info("✓ Stage 6: Final Polisher")
+
+            logger.info("=" * 60)
+        else:
+            # Legacy mode (no pipeline)
+            self.ats_optimizer = ATSOptimizer(self.config, ai_model)
+            target_coverage = self.config.get('resume_customization', 'target_skill_coverage', default=85)
+            logger.info(f"Using legacy ATS Optimizer only (target: {target_coverage}% coverage)")
 
         self.resume_validator = ResumeValidator(self.config, ai_model)
-        logger.info("AI-Powered Resume Validator enabled (prevents repetition & quality issues)")
+        logger.info("Resume Quality Validator enabled")
 
         self.interview_prep_gen = InterviewPrepGenerator()
         self.doc_generator = DOCResumeGenerator()
@@ -245,64 +283,157 @@ class JobFinderOrchestrator:
             with self.logging_lock:
                 logger.info(f"\nCustomizing resume {job_index+1}/{total_jobs} for: {job.get('title')} at {job.get('company')}")
 
-            # Use AI-powered ATS optimization for 95% coverage
-            # For stretch jobs (50-70% match), use aggressive mode for 98% coverage
+            # AI RESUME INTELLIGENCE PIPELINE - 6 STAGES
             match_analysis = job.get('match_analysis', {})
-            is_stretch = job.get('_is_stretch_job', False)
+            enable_pipeline = self.config.get('resume_customization', 'enable_ai_pipeline', default=True)
 
-            if is_stretch:
+            if enable_pipeline:
+                # === STAGE 1: ROLE INTELLIGENCE ANALYZER ===
                 with self.logging_lock:
-                    logger.info(f"  Using AGGRESSIVE mode for stretch job (boost potential: {job.get('_boost_potential', 0)})")
+                    logger.info(f"  [1/6] Analyzing role match and repositioning strategy...")
 
-            ats_result = self.ats_optimizer.optimize_resume(
-                self.master_resume,
-                job,
-                match_analysis
-            )
+                role_analysis = self.role_analyzer.analyze(
+                    job.get('description', ''),
+                    job.get('title', ''),
+                    self.master_resume
+                )
 
-            customized_resume = ats_result.get('optimized_resume', self.master_resume)
-
-            # Build customization report for email
-            customization_report = {
-                'total_changes': ats_result.get('total_changes', 0),
-                'coverage_before': ats_result.get('coverage_before', 0),
-                'coverage_after': ats_result.get('coverage_after', 0),
-                'ats_optimization': ats_result.get('verification', {}),
-                'modifications': ats_result.get('modifications', []),
-                'coherence_score': 90,  # ATS optimizer maintains coherence
-                'interview_readiness': ats_result.get('verification', {}).get('final_coverage', 0)
-            }
-
-            # VALIDATION STEP: Check and fix resume quality issues
-            with self.logging_lock:
-                logger.info(f"  Validating resume quality (checking for repetition, date conflicts, etc.)...")
-
-            validation_result = self.resume_validator.validate_and_fix(
-                customized_resume,
-                job,
-                customization_report
-            )
-
-            # Use validated resume if validation passed or was fixed
-            if validation_result.get('validation_passed'):
-                customized_resume = validation_result.get('validated_resume', customized_resume)
                 with self.logging_lock:
-                    logger.info(f"  ✓ Resume quality validated (Authenticity: {validation_result.get('authenticity_score')}%, Quality: {validation_result.get('quality_score')}%)")
+                    logger.info(f"  Role Mismatch: {role_analysis.get('mismatch_severity', 'NONE')}")
+                    if role_analysis.get('mismatch_severity') != 'NONE':
+                        logger.info(f"  Target Role: {role_analysis.get('job_role_type')} (Resume: {role_analysis.get('resume_role_type')})")
 
-                    fixes = validation_result.get('fixes_applied', [])
-                    if fixes:
-                        logger.info(f"  Applied {len(fixes)} auto-fixes to improve quality")
+                # === STAGE 2: NARRATIVE REPOSITIONER ===
+                with self.logging_lock:
+                    logger.info(f"  [2/6] Repositioning narrative for target role...")
+
+                repositioned_resume = self.narrative_repositioner.reposition(
+                    self.master_resume,
+                    role_analysis.get('repositioning_strategy', {}),
+                    job.get('title', ''),
+                    job.get('description', '')
+                )
+
+                # === STAGE 3: ATS OPTIMIZER ===
+                with self.logging_lock:
+                    logger.info(f"  [3/6] Optimizing for ATS (target: {self.config.get('resume_customization', 'target_skill_coverage', default=85)}%)...")
+
+                ats_result = self.ats_optimizer.optimize_resume(
+                    repositioned_resume,
+                    job,
+                    match_analysis
+                )
+
+                ats_optimized_resume = ats_result.get('optimized_resume', repositioned_resume)
+
+                # === STAGE 4: AUTHENTICITY HUMANIZER ===
+                with self.logging_lock:
+                    logger.info(f"  [4/6] Humanizing for authenticity...")
+
+                humanized_resume = self.authenticity_humanizer.humanize(ats_optimized_resume)
+
+                # === STAGE 5: AI QUALITY VALIDATOR (with retry logic) ===
+                max_retries = self.config.get('resume_customization', 'max_validation_retries', default=2)
+                validation_passed = False
+                retry_count = 0
+                final_resume = humanized_resume
+
+                while retry_count <= max_retries and not validation_passed:
+                    with self.logging_lock:
+                        retry_msg = f" (retry {retry_count})" if retry_count > 0 else ""
+                        logger.info(f"  [5/6] Validating quality{retry_msg}...")
+
+                    validation_result = self.ai_quality_validator.validate(
+                        final_resume,
+                        job.get('description', ''),
+                        job.get('title', '')
+                    )
+
+                    validation_passed = validation_result.get('passed', False)
+
+                    if validation_passed:
+                        with self.logging_lock:
+                            logger.info(f"  ✓ Validation PASSED (Overall: {validation_result.get('overall_score')}%, Authenticity: {validation_result.get('authenticity')}%)")
+                    else:
+                        retry_stage = validation_result.get('retry_stage')
+                        red_flags = validation_result.get('red_flags', [])
+
+                        with self.logging_lock:
+                            logger.warning(f"  ✗ Validation FAILED (Overall: {validation_result.get('overall_score')}%, Authenticity: {validation_result.get('authenticity')}%)")
+                            if red_flags:
+                                logger.warning(f"  Red flags: {', '.join(red_flags[:3])}")
+                            if retry_stage and retry_count < max_retries:
+                                logger.info(f"  Retrying {retry_stage} stage...")
+
+                        # Retry the recommended stage
+                        if retry_count < max_retries and retry_stage:
+                            if retry_stage == "Humanizer":
+                                final_resume = self.authenticity_humanizer.humanize(
+                                    ats_optimized_resume,
+                                    previous_attempt=final_resume,
+                                    feedback=validation_result.get('feedback')
+                                )
+                            elif retry_stage == "Repositioner":
+                                repositioned_resume = self.narrative_repositioner.reposition(
+                                    self.master_resume,
+                                    role_analysis.get('repositioning_strategy', {}),
+                                    job.get('title', ''),
+                                    job.get('description', '')
+                                )
+                                ats_result = self.ats_optimizer.optimize_resume(repositioned_resume, job, match_analysis)
+                                ats_optimized_resume = ats_result.get('optimized_resume', repositioned_resume)
+                                final_resume = self.authenticity_humanizer.humanize(ats_optimized_resume)
+                        else:
+                            # Max retries reached or no retry stage specified
+                            break
+
+                        retry_count += 1
+
+                # === STAGE 6: FINAL POLISHER ===
+                with self.logging_lock:
+                    logger.info(f"  [6/6] Final polish and cleanup...")
+
+                customized_resume = self.final_polisher.polish(final_resume, validation_result)
+
+                # Build customization report
+                customization_report = {
+                    'total_changes': ats_result.get('total_changes', 0),
+                    'coverage_before': ats_result.get('coverage_before', 0),
+                    'coverage_after': ats_result.get('coverage_after', 0),
+                    'role_analysis': role_analysis,
+                    'validation_score': validation_result.get('overall_score', 0),
+                    'authenticity_score': validation_result.get('authenticity', 0),
+                    'ats_readiness': validation_result.get('ats_readiness', 0),
+                    'role_alignment': validation_result.get('role_alignment', 0),
+                    'technical_depth': validation_result.get('technical_depth', 0),
+                    'validation_passed': validation_passed,
+                    'validation_retries': retry_count,
+                    'modifications': ats_result.get('modifications', []),
+                    'coherence_score': validation_result.get('role_alignment', 90),
+                    'interview_readiness': validation_result.get('overall_score', 85)
+                }
+
             else:
-                # Log validation failure warning
-                issues = validation_result.get('issues_found', [])
+                # Legacy mode: ATS Optimizer only
                 with self.logging_lock:
-                    logger.warning(f"  ⚠️  Resume validation failed - {len(issues)} issues found")
-                    logger.warning(f"  Authenticity: {validation_result.get('authenticity_score')}%, Quality: {validation_result.get('quality_score')}%")
-                    # Use validated resume anyway (it may have partial fixes)
-                    customized_resume = validation_result.get('validated_resume', customized_resume)
+                    logger.info(f"  Running legacy ATS Optimizer...")
 
-            # Attach validation report to customization report
-            customization_report['validation_report'] = validation_result.get('validation_report', {})
+                ats_result = self.ats_optimizer.optimize_resume(
+                    self.master_resume,
+                    job,
+                    match_analysis
+                )
+
+                customized_resume = ats_result.get('optimized_resume', self.master_resume)
+
+                customization_report = {
+                    'total_changes': ats_result.get('total_changes', 0),
+                    'coverage_before': ats_result.get('coverage_before', 0),
+                    'coverage_after': ats_result.get('coverage_after', 0),
+                    'modifications': ats_result.get('modifications', []),
+                    'coherence_score': 90,
+                    'interview_readiness': ats_result.get('verification', {}).get('final_coverage', 0)
+                }
 
             with self.logging_lock:
                 logger.info(f"  ATS Coverage: {customization_report['coverage_before']}% → {customization_report['coverage_after']}%")
@@ -441,7 +572,7 @@ class JobFinderOrchestrator:
             'avg_match_score': sum(j.get('match_score', 0) for j in jobs) / len(jobs) if jobs else 0
         }
 
-        success = self.email_sender.send_daily_report(jobs, resume_files, stats)
+        success = self.email_sender.send_daily_report(jobs, resume_files, stats, prep_guides)
         if success:
             logger.info(f"✓ Sent email to {self.config.email_to}")
         else:

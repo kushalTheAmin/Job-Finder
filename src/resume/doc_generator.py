@@ -4,6 +4,7 @@ Optimized for ATS compatibility with strategic highlighting.
 """
 
 import logging
+import html
 import re
 from pathlib import Path
 from typing import Dict, List, Any
@@ -248,8 +249,11 @@ class DOCResumeGenerator:
                     bullet_symbol.font.size = Pt(10.5)
                     bullet_symbol.font.name = 'Calibri'
 
+                    # Decode HTML entities (e.g., &amp; -> &) before highlighting
+                    clean_bullet_text = html.unescape(bullet_text)
+
                     # Apply strategic highlighting to bullet text
-                    StrategicHighlighter.apply_strategic_highlighting(bullets_para, bullet_text)
+                    StrategicHighlighter.apply_strategic_highlighting(bullets_para, clean_bullet_text)
 
                     # Format all runs that don't have explicit formatting
                     for run in bullets_para.runs:

@@ -1,6 +1,7 @@
 """PDF resume generator."""
 
 import logging
+import html
 from typing import Dict, Any
 from pathlib import Path
 from datetime import datetime
@@ -263,7 +264,9 @@ class PDFResumeGenerator:
                 # Responsibilities
                 responsibilities = exp.get('responsibilities', [])
                 for resp in responsibilities:
-                    bullet_text = f"• {resp}"
+                    # Decode HTML entities (e.g., &amp; -> &)
+                    clean_resp = html.unescape(resp)
+                    bullet_text = f"• {clean_resp}"
                     elements.append(Paragraph(bullet_text, self.styles['Bullet']))
 
                 elements.append(Spacer(1, 0.15*inch))

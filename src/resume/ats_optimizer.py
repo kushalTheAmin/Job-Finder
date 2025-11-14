@@ -1,10 +1,14 @@
 """AI-powered ATS optimization system for resume customization.
 
-This module uses comprehensive AI prompts to achieve 95%+ skill coverage by:
-1. Extracting and ranking all skills from job description
+Stage 3 of the AI Resume Intelligence Pipeline.
+Runs AFTER role repositioning, BEFORE humanization.
+
+This module achieves 85% skill coverage (not 95% - avoiding keyword stuffing) by:
+1. Extracting and ranking skills from job description
 2. Calculating current resume coverage with weighted scoring
-3. Rewriting experience bullets to inject missing keywords
-4. Verifying quality and authenticity of modifications
+3. Surgically adding missing CRITICAL keywords only
+4. Maintaining authenticity (max 4 tech items per list)
+5. Preparing resume for humanization stage
 """
 
 import logging
@@ -26,9 +30,10 @@ class ATSOptimizer:
         """
         self.config = config
         self.ai_client = ai_client
-        self.target_coverage = config.get('resume_customization', 'target_skill_coverage', default=95)
-        self.max_bullets_to_modify = config.get('resume_customization', 'max_bullets_to_modify', default=8)
-        self.min_authenticity = config.get('resume_customization', 'min_authenticity_score', default=75)
+        self.target_coverage = config.get('resume_customization', 'target_skill_coverage', default=85)
+        self.max_bullets_to_modify = config.get('resume_customization', 'max_bullets_to_modify', default=5)
+        self.max_tech_list_length = config.get('resume_customization', 'max_tech_list_length', default=4)
+        self.min_authenticity = config.get('resume_customization', 'min_authenticity_score', default=80)
 
     def optimize_resume(
         self,
@@ -37,10 +42,11 @@ class ATSOptimizer:
         match_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Optimize resume to achieve 95%+ ATS coverage using AI.
+        Optimize resume to achieve target ATS coverage (85%) using AI.
+        Stage 3 of AI pipeline - runs after repositioning, before humanization.
 
         Args:
-            resume: Current resume JSON
+            resume: Repositioned resume JSON (from NarrativeRepositioner)
             job: Job posting data
             match_analysis: Initial matching analysis
 
@@ -335,7 +341,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown formatting, no code blocks."""
         missing_skills_json = json.dumps(missing_skills, indent=2)
         current_coverage = coverage_analysis['coverage_analysis']['overall_score']
 
-        prompt = f"""You are an expert resume writer and ATS optimization specialist. Rewrite experience bullets to reach 95% skill coverage while maintaining authenticity.
+        prompt = f"""You are an expert resume writer and ATS optimization specialist. Add CRITICAL missing keywords ONLY while avoiding keyword stuffing that makes resumes feel AI-generated.
 
 CURRENT RESUME EXPERIENCE:
 {experience_json}
@@ -344,44 +350,42 @@ MISSING SKILLS TO ADD (prioritized):
 {missing_skills_json}
 
 CURRENT COVERAGE: {current_coverage}%
-TARGET COVERAGE: 95%
+TARGET COVERAGE: {self.target_coverage}% (NOT 95% - we value authenticity)
 
-REWRITING RULES:
+CRITICAL ANTI-KEYWORD-STUFFING RULES:
 
-1. KEYWORD INJECTION STRATEGY:
+1. MAXIMUM TECH LIST LENGTH: {self.max_tech_list_length} items
+   ❌ NEVER DO THIS: "React, TypeScript, Redux, GraphQL, Next.js, Tailwind"  (6 items = KEYWORD STUFFING)
+   ✅ GOOD: "React and TypeScript"  (2 items = natural)
+   ✅ ACCEPTABLE: "React, TypeScript, and GraphQL"  (3 items = ok)
+   ✅ MAXIMUM: "React, TypeScript, GraphQL, and Redux"  (4 items = limit)
 
-   ✅ GOOD EXAMPLES:
-   Before: "Lead development of web applications using React, Angular, C#..."
-   After:  "Lead development of web applications using React, Python, Django, Angular, C#..."
+2. ADD ONLY CRITICAL MISSING SKILLS:
+   - Focus on skills ranked "CRITICAL" from missing list
+   - Skip "IMPORTANT" unless coverage gap is huge
+   - NEVER add "NICE_TO_HAVE" skills
 
-   Before: "Harness Google Cloud Platform (GCP) for deployment..."
-   After:  "Harness AWS and Google Cloud Platform (GCP) for deployment and scalability..."
+3. SURGICAL INSERTION (modify max {self.max_bullets_to_modify} bullets):
 
-   ❌ BAD EXAMPLES:
-   Before: "Lead development of web applications..."
-   After:  "Lead development using Python Django MySQL AWS TypeScript React..."
-   Why bad: Keyword stuffing, unnatural
+   ✅ GOOD - ADD ONE KEYWORD NATURALLY:
+   Before: "Built authentication service with JWT tokens"
+   After:  "Built OAuth2 authentication service with JWT tokens"
+   Added: OAuth2 (1 keyword, natural, relevant)
 
-2. WHERE TO ADD KEYWORDS:
-   PRIORITY 1 - Current/Recent Job: Add CRITICAL missing skills (modify 3-4 bullets max)
-   PRIORITY 2 - Previous Job: Add IMPORTANT missing skills (modify 2-3 bullets)
-   PRIORITY 3 - Skills Section: Add remaining keywords
+   ✅ GOOD - ADD ASSOCIATED TECH:
+   Before: "Developed backend APIs"
+   After:  "Developed Python backend APIs with FastAPI"
+   Added: Python, FastAPI (2 keywords, work together)
 
-3. NATURAL INSERTION TECHNIQUES:
-   - Technology Lists: "using React, Angular" → "using React, TypeScript, Angular"
-   - Associated Tech: "Python development" → "Python backend with Django and MySQL"
-   - Cloud: "deployed on GCP" → "deployed on AWS and GCP"
+   ❌ BAD - KEYWORD STUFFING:
+   Before: "Built authentication service"
+   After:  "Built OAuth2 authentication service using Python, FastAPI, PostgreSQL, Redis, Docker, and Kubernetes"
+   Why bad: Added 6 keywords to one bullet = AI-generated feel
 
-4. AUTHENTICITY CONSTRAINTS:
-   ⚠️ DO NOT:
-   - Change company name, job title, dates
-   - Change core responsibilities
-   - Make bullets 3x longer (max 50% longer)
-
-   ✅ DO:
-   - Add technologies that work together (React + TypeScript)
-   - Add cloud platforms (AWS + GCP)
-   - Keep original achievement, enhance with keywords
+4. MAINTAIN ORIGINAL VOICE:
+   - Keep 60%+ of original wording
+   - Don't turn every bullet into a tech list
+   - Some bullets should have NO new keywords (natural variation)
 
 OUTPUT FORMAT (JSON only, no markdown):
 {{

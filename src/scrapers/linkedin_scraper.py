@@ -67,7 +67,20 @@ class LinkedInScraper(BaseScraper):
                     self.logger.error(f"Error scraping LinkedIn page {page}: {str(e)}")
                     break
 
-            self.logger.info(f"Found {len(jobs)} jobs from LinkedIn")
+            # Log summary statistics
+            if hasattr(self, 'stats'):
+                total_attempts = self.stats['full_fetched'] + self.stats['fallback_used']
+                success_rate = (self.stats['full_fetched'] / total_attempts * 100) if total_attempts > 0 else 0
+
+                self.logger.info(f"Found {len(jobs)} jobs from LinkedIn")
+                self.logger.info(f"📊 LinkedIn Summary: {self.stats['full_fetched']}/{total_attempts} full descriptions ({success_rate:.1f}% success)")
+                self.logger.info(f"   ✓ Full fetched: {self.stats['full_fetched']}")
+                self.logger.info(f"   ⚠️ Fallback used: {self.stats['fallback_used']}")
+                self.logger.info(f"   🔒 Auth blocked: {self.stats['auth_blocked']}")
+                self.logger.info(f"   ✗ Fetch errors: {self.stats['fetch_errors']}")
+            else:
+                self.logger.info(f"Found {len(jobs)} jobs from LinkedIn")
+
             return jobs
 
         except Exception as e:
@@ -81,6 +94,12 @@ class LinkedInScraper(BaseScraper):
 
         # Find job cards
         job_cards = soup.find_all('div', class_='base-card')
+
+        # Track statistics
+        if not hasattr(self, 'stats'):
+            self.stats = {'full_fetched': 0, 'fallback_used': 0, 'auth_blocked': 0, 'fetch_errors': 0}
+
+        self.logger.debug(f"Found {len(job_cards)} job cards on page")
 
         for card in job_cards:
             try:
@@ -127,13 +146,22 @@ class LinkedInScraper(BaseScraper):
                     description = details['description']
                     word_count = len(description.split())
                     self.logger.info(f"✓ Got full description ({word_count} words) for: {title}")
+                    self.stats['full_fetched'] += 1
+                elif details.get('auth_required'):
+                    self.logger.warning(f"✗ Auth required for: {title}, using placeholder")
+                    self.stats['auth_blocked'] += 1
+                    self.stats['fallback_used'] += 1
                 else:
                     self.logger.warning(f"✗ Could not fetch full description for: {title}, using placeholder")
+                    self.stats['fetch_errors'] += 1
+                    self.stats['fallback_used'] += 1
 
                 # Rate limiting: delay between detail fetches to avoid blocking
                 time.sleep(1)
             except Exception as e:
                 self.logger.warning(f"✗ Error fetching description for {title}: {str(e)}, using placeholder")
+                self.stats['fetch_errors'] += 1
+                self.stats['fallback_used'] += 1
 
         # Create job object
         job = {
@@ -169,7 +197,7 @@ class LinkedInScraper(BaseScraper):
             # Check if we got redirected to login/authwall page
             if 'authwall' in response.url or 'login' in response.url or '/uas/login' in response.url:
                 self.logger.warning("LinkedIn requires authentication for this job (authwall detected)")
-                return {}
+                return {'auth_required': True}
 
             soup = BeautifulSoup(response.text, 'html.parser')
 

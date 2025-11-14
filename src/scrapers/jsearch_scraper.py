@@ -77,8 +77,13 @@ class JSearchScraper(BaseScraper):
         """Parse JSearch API response and fetch full job details."""
         jobs = []
 
+        # Track statistics
+        stats = {'details_fetched': 0, 'search_used': 0, 'details_better': 0, 'fetch_errors': 0}
+
         results = data.get('data', [])
         total_results = len(results)
+
+        self.logger.debug(f"Processing {total_results} results from JSearch API")
 
         for idx, result in enumerate(results, 1):
             title = result.get('job_title', '')
@@ -93,17 +98,22 @@ class JSearchScraper(BaseScraper):
             # Use the longer/better description
             description = full_description if full_description else search_description
 
-            # Log which source we used
+            # Log which source we used and track statistics
             if full_description:
                 full_words = len(full_description.split())
                 search_words = len(search_description.split())
+                stats['details_fetched'] += 1
                 if full_words > search_words:
                     self.logger.info(f"✓ Details endpoint has more content ({full_words} vs {search_words} words) for: {title}")
+                    stats['details_better'] += 1
                 else:
                     self.logger.debug(f"Details endpoint similar length for: {title}")
             else:
                 search_words = len(search_description.split())
                 self.logger.warning(f"Using search description ({search_words} words) for: {title}")
+                stats['search_used'] += 1
+                if self.has_details_endpoint is not False:  # Only count as error if endpoint should work
+                    stats['fetch_errors'] += 1
 
             job = {
                 'title': title,
@@ -124,6 +134,15 @@ class JSearchScraper(BaseScraper):
             # Skip delay for last job
             if idx < total_results:
                 time.sleep(0.5)
+
+        # Log summary statistics
+        total_attempts = stats['details_fetched'] + stats['search_used']
+        success_rate = (stats['details_fetched'] / total_attempts * 100) if total_attempts > 0 else 0
+        self.logger.info(f"📊 JSearch Summary: {stats['details_fetched']}/{total_attempts} details fetched ({success_rate:.1f}% success)")
+        self.logger.info(f"   ✓ Details fetched: {stats['details_fetched']}")
+        self.logger.info(f"   📈 Details better: {stats['details_better']}")
+        self.logger.info(f"   🔍 Search used: {stats['search_used']}")
+        self.logger.info(f"   ✗ Fetch errors: {stats['fetch_errors']}")
 
         return jobs
 

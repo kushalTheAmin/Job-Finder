@@ -66,7 +66,20 @@ class IndeedScraper(BaseScraper):
                     self.logger.error(f"Error scraping Indeed page {page}: {str(e)}")
                     break
 
-            self.logger.info(f"Found {len(jobs)} jobs from Indeed")
+            # Log summary statistics
+            if hasattr(self, 'stats'):
+                total_attempts = self.stats['full_fetched'] + self.stats['fallback_used']
+                success_rate = (self.stats['full_fetched'] / total_attempts * 100) if total_attempts > 0 else 0
+
+                self.logger.info(f"Found {len(jobs)} jobs from Indeed")
+                self.logger.info(f"📊 Indeed Summary: {self.stats['full_fetched']}/{total_attempts} full descriptions ({success_rate:.1f}% success)")
+                self.logger.info(f"   ✓ Full fetched: {self.stats['full_fetched']}")
+                self.logger.info(f"   ⚠️ Fallback used: {self.stats['fallback_used']}")
+                self.logger.info(f"   🚫 Blocked: {self.stats['blocked']}")
+                self.logger.info(f"   ✗ Fetch errors: {self.stats['fetch_errors']}")
+            else:
+                self.logger.info(f"Found {len(jobs)} jobs from Indeed")
+
             return jobs
 
         except Exception as e:
@@ -78,6 +91,10 @@ class IndeedScraper(BaseScraper):
         jobs = []
         soup = BeautifulSoup(html, 'html.parser')
 
+        # Track statistics
+        if not hasattr(self, 'stats'):
+            self.stats = {'full_fetched': 0, 'fallback_used': 0, 'blocked': 0, 'fetch_errors': 0}
+
         # Find job cards (Indeed frequently changes their class names)
         # Try multiple selectors
         job_cards = (
@@ -85,6 +102,8 @@ class IndeedScraper(BaseScraper):
             soup.find_all('div', class_=re.compile(r'resultContent')) or
             soup.find_all('td', class_='resultContent')
         )
+
+        self.logger.debug(f"Found {len(job_cards)} job cards on page")
 
         for card in job_cards:
             try:
@@ -151,12 +170,20 @@ class IndeedScraper(BaseScraper):
         if url:
             job_id = self._extract_job_id(url)
             if job_id:
-                full_description = self._fetch_full_description(job_id, title)
-                if full_description:
-                    description = full_description
+                fetch_result = self._fetch_full_description(job_id, title)
+                if isinstance(fetch_result, dict) and fetch_result.get('description'):
+                    description = fetch_result['description']
+                    self.stats['full_fetched'] += 1
+                    if fetch_result.get('blocked'):
+                        self.stats['blocked'] += 1
+                elif fetch_result:  # Got string description
+                    description = fetch_result
+                    self.stats['full_fetched'] += 1
                 else:
                     snippet_words = len(snippet_description.split())
                     self.logger.warning(f"Using snippet ({snippet_words} words) for: {title}")
+                    self.stats['fallback_used'] += 1
+                    self.stats['fetch_errors'] += 1
 
         # Create job object
         job = {

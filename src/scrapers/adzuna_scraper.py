@@ -83,8 +83,13 @@ class AdzunaScraper(BaseScraper):
         """Parse Adzuna API response and fetch full descriptions."""
         jobs = []
 
+        # Track statistics
+        stats = {'full_fetched': 0, 'fallback_used': 0, 'fetch_errors': 0}
+
         results = data.get('results', [])
         total_results = len(results)
+
+        self.logger.debug(f"Processing {total_results} results from Adzuna API")
 
         for idx, result in enumerate(results, 1):
             title = result.get('title', '')
@@ -98,9 +103,13 @@ class AdzunaScraper(BaseScraper):
             # Use full description if available, otherwise fallback to snippet
             description = full_description if full_description else snippet_description
 
-            if not full_description:
+            if full_description:
+                stats['full_fetched'] += 1
+            else:
                 snippet_words = len(snippet_description.split())
                 self.logger.warning(f"Using snippet ({snippet_words} words) for: {title}")
+                stats['fallback_used'] += 1
+                stats['fetch_errors'] += 1
 
             job = {
                 'title': title,
@@ -121,6 +130,14 @@ class AdzunaScraper(BaseScraper):
             # Skip delay for last job
             if idx < total_results:
                 time.sleep(1)
+
+        # Log summary statistics
+        total_attempts = stats['full_fetched'] + stats['fallback_used']
+        success_rate = (stats['full_fetched'] / total_attempts * 100) if total_attempts > 0 else 0
+        self.logger.info(f"📊 Adzuna Summary: {stats['full_fetched']}/{total_attempts} full descriptions ({success_rate:.1f}% success)")
+        self.logger.info(f"   ✓ Full fetched: {stats['full_fetched']}")
+        self.logger.info(f"   ⚠️ Fallback used: {stats['fallback_used']}")
+        self.logger.info(f"   ✗ Fetch errors: {stats['fetch_errors']}")
 
         return jobs
 

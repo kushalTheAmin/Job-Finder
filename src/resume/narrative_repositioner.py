@@ -6,7 +6,7 @@ Repositions candidate's story to match target role emphasis.
 
 import logging
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
@@ -34,7 +34,8 @@ class NarrativeRepositioner:
         resume: Dict[str, Any],
         repositioning_strategy: Dict[str, Any],
         job_title: str,
-        job_description: str
+        job_description: str,
+        match_analysis: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Reposition resume narrative based on strategy from RoleIntelligenceAnalyzer.
@@ -44,6 +45,7 @@ class NarrativeRepositioner:
             repositioning_strategy: Strategy from RoleIntelligenceAnalyzer
             job_title: Target job title
             job_description: Target job description
+            match_analysis: Job matching analysis with missing skills list
 
         Returns:
             Repositioned resume JSON with narrative transformed
@@ -57,7 +59,7 @@ class NarrativeRepositioner:
 
         # Build AI prompt
         prompt = self._build_repositioning_prompt(
-            resume, repositioning_strategy, job_title, job_description
+            resume, repositioning_strategy, job_title, job_description, match_analysis
         )
 
         try:
@@ -82,9 +84,17 @@ class NarrativeRepositioner:
         resume: Dict[str, Any],
         strategy: Dict[str, Any],
         job_title: str,
-        job_description: str
+        job_description: str,
+        match_analysis: Dict[str, Any] = None
     ) -> str:
         """Build the AI prompt for narrative repositioning."""
+
+        # Extract missing skills from match_analysis
+        missing_skills = []
+        if match_analysis and 'missing_skills' in match_analysis:
+            missing_skills = match_analysis['missing_skills']
+
+        missing_skills_summary = self._format_missing_skills(missing_skills) if missing_skills else "No explicit skill list provided - extract from job description"
 
         prompt = f"""You are an expert resume writer specializing in career repositioning and narrative transformation.
 
@@ -97,6 +107,9 @@ TARGET JOB DESCRIPTION (first 2000 chars):
 
 REPOSITIONING STRATEGY:
 {json.dumps(strategy, indent=2)}
+
+MISSING SKILLS TO ADD (from job requirements):
+{missing_skills_summary}
 
 CURRENT RESUME:
 {json.dumps(resume, indent=2)}
@@ -186,21 +199,34 @@ INSTRUCTIONS:
    - If target is Data/Analytics: Use "data-driven", "insights", "analytics", "intelligence", "metrics"
    - Use terminology from the job description
 
-7. AGGRESSIVE TECHNOLOGY ADDITION:
-   - ADD technologies from job description even if not currently in resume
-   - Place new technologies in plausible contexts where they could have been used
-   - Prioritize adding CRITICAL and IMPORTANT skills from job
+7. AGGRESSIVE TECHNOLOGY ADDITION - USE THE MISSING SKILLS LIST ABOVE:
+   - ADD ALL technologies from the "MISSING SKILLS TO ADD" list above
+   - Place new technologies in PLAUSIBLE contexts where they could have been used
+   - CRITICAL skills: Add to 2-3 different bullets (multiple mentions for ATS)
+   - IMPORTANT skills: Add to 1-2 bullets
+   - OPTIONAL skills: Add to skills section and/or 1 bullet if plausible
    - Add technologies in groups that make sense together (e.g., "Python and Django", "AWS and Lambda")
-   - Make it sound like real experience, not fabricated
+   - Make it sound like REAL experience, not fabricated - use contexts like "for data processing", "for API development", "for deployment automation"
 
-   Examples:
-   ✅ Original: "Built backend services for data processing"
-   ✅ Enhanced: "Built Python backend services with FastAPI for data processing using PostgreSQL"
-   (Added: Python, FastAPI, PostgreSQL from job requirements)
+   PLAUSIBILITY RULES:
+   - Backend technologies (Python, Go, Java): Add to "backend APIs", "microservices", "data processing", "server-side" bullets
+   - Databases (PostgreSQL, MySQL): Add to "data storage", "backend services", "API development" bullets
+   - Frontend libraries (React extensions): Add to existing React/frontend bullets
+   - DevOps tools (Docker, Kubernetes): Add to "deployment", "CI/CD", "infrastructure" bullets
+   - Data tools (Pandas, Jupyter): Add to "analytics", "dashboards", "data processing" bullets
 
-   ✅ Original: "Developed CI/CD pipeline"
-   ✅ Enhanced: "Developed CI/CD pipeline using GitHub Actions and Docker for containerized deployments"
-   (Added: GitHub Actions, Docker from job requirements)
+   Examples based on MISSING SKILLS list:
+   ✅ If missing skill is "Python (CRITICAL)":
+      Original: "Built backend services for data processing"
+      Enhanced: "Built Python backend services with FastAPI for data processing using PostgreSQL"
+
+   ✅ If missing skill is "Docker (IMPORTANT)":
+      Original: "Implemented CI/CD pipeline"
+      Enhanced: "Implemented CI/CD pipeline using Docker containers for automated deployments"
+
+   ✅ If missing skill is "Pandas (IMPORTANT)":
+      Original: "Developed analytics dashboards"
+      Enhanced: "Developed analytics dashboards with Python using Pandas for data transformation"
 
 8. MAINTAIN AUTHENTICITY (while being aggressive):
    - DO add technologies from job description to maximize ATS match
@@ -235,15 +261,21 @@ INSTRUCTIONS:
 CRITICAL RULES:
 - Keep all dates, company names, job titles EXACTLY as they are
 - Maintain chronological order of jobs
-- BE AGGRESSIVE with technology additions - ADD technologies from job description
-- ADD technologies in plausible contexts (e.g., "backend APIs" → "Python backend APIs with FastAPI")
+- BE AGGRESSIVE with technology additions - ADD ALL technologies from "MISSING SKILLS TO ADD" list above
+- Use PLAUSIBILITY RULES above to add technologies in realistic contexts
+- Place technologies where they make sense:
+  * Python/Go → backend services, APIs, data processing
+  * PostgreSQL/MySQL → data storage, backend services
+  * Docker/Kubernetes → CI/CD, deployments, infrastructure
+  * Pandas/Jupyter → analytics, dashboards, data analysis
 - BE AGGRESSIVE with the professional summary - it MUST change significantly to match the job
 - REORDER bullets within each job to put most relevant ones first
 - Apply domain/business context shifts to make experience relevant (e.g., "dealership" → "client", "automotive" → "business")
-- ADD ALL missing skills to skills section (CRITICAL + IMPORTANT + NICE_TO_HAVE)
-- Focus on repositioning HOW things are presented AND adding missing job requirements
+- ADD ALL missing skills to skills section (CRITICAL + IMPORTANT + OPTIONAL from the list above)
+- Make it sound NATURAL - don't say "I added Python for ATS", say "Built Python backend services for..."
+- Distribute technologies across 5-8 bullets + skills section + professional summary (don't stuff all in one bullet)
+- Focus on PLAUSIBILITY - if a skill doesn't fit anywhere naturally, put it in skills section only
 - Output must be complete, valid JSON matching the input structure
-- Distribute new technologies across 5-8 bullets + skills section + professional summary
 
 OUTPUT FORMAT: Return ONLY valid JSON (no markdown, no code blocks) with the complete repositioned resume.
 
@@ -252,6 +284,25 @@ The JSON should have the exact same structure as the input resume, just with mod
 Generate the repositioned resume now:"""
 
         return prompt
+
+    def _format_missing_skills(self, missing_skills: List[Dict[str, Any]]) -> str:
+        """Format missing skills for the prompt."""
+        if not missing_skills:
+            return "None"
+
+        formatted = []
+        for skill_info in missing_skills:
+            skill_name = skill_info.get('skill', 'Unknown')
+            priority = skill_info.get('priority', 'UNKNOWN')
+            mention_count = skill_info.get('mention_count', 0)
+            addition_strategy = skill_info.get('addition_strategy', {})
+            placement = addition_strategy.get('best_placement', 'unknown')
+
+            formatted.append(
+                f"- {skill_name} ({priority}, mentioned {mention_count}x) - Best placement: {placement}"
+            )
+
+        return "\n".join(formatted)
 
     def _parse_ai_response(self, response_text: str, original_resume: Dict[str, Any]) -> Dict[str, Any]:
         """Parse AI response into resume JSON."""

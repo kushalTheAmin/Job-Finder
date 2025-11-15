@@ -314,7 +314,8 @@ class JobFinderOrchestrator:
                     self.master_resume,
                     role_analysis.get('repositioning_strategy', {}),
                     job.get('title', ''),
-                    job.get('description', '')
+                    job.get('description', ''),
+                    match_analysis  # Pass match_analysis so Narrative Repositioner knows which skills to add
                 )
 
                 # === STAGE 3: ATS OPTIMIZER ===

@@ -392,25 +392,39 @@ GOAL: Add ALL missing skills from job description (CRITICAL + IMPORTANT + NICE_T
 
 4. EXPERIENCE BULLETS - MODIFY UP TO {self.max_bullets_to_modify * 2} BULLETS (be aggressive):
 
+   PLAUSIBILITY PLACEMENT RULES - Add technologies where they make sense:
+   - Backend languages (Python, Go, Java, Node.js): "backend APIs", "microservices", "server-side", "data processing"
+   - Databases (PostgreSQL, MySQL, Redis, MongoDB): "data storage", "backend services", "API development", "caching"
+   - Frontend frameworks (React, Vue, Angular): "UI development", "frontend", "dashboards", "client-side"
+   - DevOps tools (Docker, Kubernetes, CI/CD tools): "deployment", "infrastructure", "containerization", "automation"
+   - Data tools (Pandas, Jupyter, NumPy): "analytics", "data analysis", "dashboards", "data processing", "visualization"
+   - Cloud platforms (AWS, GCP, Azure): "infrastructure", "deployment", "cloud services", "serverless"
+
    Strategy A - Add to existing tech mentions:
    Before: "Built authentication service with JWT tokens"
    After:  "Built OAuth2 authentication service using Node.js with JWT tokens"
-   Added: OAuth2, Node.js (2 new keywords from job)
+   Plausibility: ✅ Node.js fits "backend service" context
 
    Strategy B - Add tech stack to generic bullets:
    Before: "Developed backend APIs for data processing"
    After:  "Developed Python backend APIs with FastAPI for data processing using PostgreSQL"
-   Added: Python, FastAPI, PostgreSQL (3 keywords from job)
+   Plausibility: ✅ Python/FastAPI/PostgreSQL all fit "backend APIs" context
 
    Strategy C - Add tools/frameworks where plausible:
    Before: "Implemented CI/CD pipeline for automated deployments"
    After:  "Implemented CI/CD pipeline using GitHub Actions and Docker for automated deployments"
-   Added: GitHub Actions, Docker (2 keywords from job)
+   Plausibility: ✅ GitHub Actions/Docker fit "CI/CD" context
 
    Strategy D - Add missing technologies EVEN IF NOT CURRENTLY IN RESUME:
    Before: "Built real-time dashboards for analytics"
    After:  "Built real-time dashboards using D3.js and Python with Pandas for data analytics"
-   Added: D3.js, Python, Pandas (from job's "nice to have" - added naturally)
+   Plausibility: ✅ Python/Pandas fit "analytics" context, D3.js fits "dashboards" context
+
+   ❌ AVOID IMPLAUSIBLE ADDITIONS:
+   DON'T add "Python" to a pure frontend bullet about React components
+   DON'T add "Kubernetes" to a bullet about UI design
+   DON'T add "Pandas" to a bullet about authentication
+   IF a skill doesn't fit ANY bullet naturally → add to skills section ONLY
 
 5. SKILLS SECTION UPDATE - CRITICAL:
    - Add ALL missing skills to appropriate categories

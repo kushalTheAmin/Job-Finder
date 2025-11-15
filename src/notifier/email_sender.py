@@ -201,6 +201,76 @@ class EmailSender:
         .highlights li {{
             margin-bottom: 5px;
         }}
+        .modifications {{
+            background: #fff9e6;
+            border-left: 3px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }}
+        .modifications-title {{
+            font-weight: bold;
+            color: #f59e0b;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }}
+        .modification-section {{
+            margin-bottom: 12px;
+        }}
+        .modification-label {{
+            font-weight: bold;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }}
+        .modification-content {{
+            color: #333;
+            font-size: 14px;
+            padding-left: 8px;
+        }}
+        .score-bar {{
+            background: #e5e7eb;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }}
+        .score-fill {{
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.3s ease;
+        }}
+        .score-text {{
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }}
+        .bullet-change {{
+            background: #f0fdf4;
+            border: 1px solid #d1fae5;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }}
+        .bullet-before {{
+            color: #ef4444;
+            text-decoration: line-through;
+            margin-bottom: 4px;
+        }}
+        .bullet-after {{
+            color: #10b981;
+            font-weight: 500;
+        }}
+        .keywords-added {{
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 2px;
+        }}
         .apply-button {{
             display: inline-block;
             background: #667eea;
@@ -307,6 +377,11 @@ class EmailSender:
         </div>
 """
 
+                # Add resume modifications report
+                customization = job.get('customization_report', {})
+                if customization:
+                    html += self._create_modifications_report(customization)
+
                 html += f"""
         <a href="{job.get('url', '#')}" class="apply-button" target="_blank">View Job & Apply →</a>
     </div>
@@ -326,6 +401,158 @@ class EmailSender:
     </div>
 </body>
 </html>
+"""
+
+        return html
+
+    def _create_modifications_report(self, customization: Dict[str, Any]) -> str:
+        """Create HTML for resume modifications report."""
+        coverage_before = customization.get('coverage_before', 0)
+        coverage_after = customization.get('coverage_after', 0)
+        total_changes = customization.get('total_changes', 0)
+        modifications = customization.get('modifications', [])
+        role_analysis = customization.get('role_analysis', {})
+
+        html = """
+        <div class="modifications">
+            <div class="modifications-title">📝 Resume Customization Report</div>
+"""
+
+        # ATS Coverage improvement
+        if coverage_before > 0 or coverage_after > 0:
+            improvement = coverage_after - coverage_before
+            improvement_text = f"+{improvement}%" if improvement > 0 else f"{improvement}%"
+
+            html += f"""
+            <div class="modification-section">
+                <div class="modification-label">ATS Match Score:</div>
+                <div class="modification-content">
+                    {coverage_before}% → {coverage_after}% <span style="color: #10b981; font-weight: bold;">({improvement_text})</span>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: {coverage_after}%;"></div>
+                    </div>
+                </div>
+            </div>
+"""
+
+        # Domain/Role repositioning
+        domain_shift = role_analysis.get('repositioning_strategy', {}).get('domain_context_shift', '')
+        if domain_shift:
+            html += f"""
+            <div class="modification-section">
+                <div class="modification-label">Domain Repositioning:</div>
+                <div class="modification-content">{domain_shift}</div>
+            </div>
+"""
+
+        # Total changes summary
+        if total_changes > 0:
+            html += f"""
+            <div class="modification-section">
+                <div class="modification-label">Changes Made:</div>
+                <div class="modification-content">
+                    ✏️ Modified {total_changes} experience bullet{'s' if total_changes != 1 else ''}
+"""
+
+            # Count skills added
+            all_keywords = []
+            for mod in modifications[:3]:  # Top 3 modifications
+                all_keywords.extend(mod.get('keywords_added', []))
+
+            if all_keywords:
+                unique_keywords = list(set(all_keywords))
+                html += f"""
+                    <br>🎯 Added {len(unique_keywords)} new keyword{'s' if len(unique_keywords) != 1 else ''}: """
+                for keyword in unique_keywords[:10]:
+                    html += f'<span class="keywords-added">{keyword}</span>'
+                if len(unique_keywords) > 10:
+                    html += f' <span style="color: #666;">+{len(unique_keywords) - 10} more</span>'
+
+            html += """
+                </div>
+            </div>
+"""
+
+        # Show top 3 bullet modifications with before/after
+        if modifications:
+            html += """
+            <div class="modification-section">
+                <div class="modification-label">Top Changes (Bullet Examples):</div>
+"""
+            for i, mod in enumerate(modifications[:3], 1):
+                original = mod.get('original', '')
+                modified = mod.get('modified', '')
+                keywords = mod.get('keywords_added', [])
+
+                if original and modified and original != modified:
+                    # Truncate for readability
+                    original_short = original[:120] + '...' if len(original) > 120 else original
+                    modified_short = modified[:120] + '...' if len(modified) > 120 else modified
+
+                    html += f"""
+                <div class="bullet-change">
+                    <div class="bullet-before">Before: {original_short}</div>
+                    <div class="bullet-after">After: {modified_short}</div>"""
+
+                    if keywords:
+                        html += f"""
+                    <div style="margin-top: 4px; font-size: 11px; color: #666;">
+                        Added: {', '.join(keywords)}
+                    </div>"""
+
+                    html += """
+                </div>
+"""
+
+            html += """
+            </div>
+"""
+
+        # Professional Summary change indicator
+        role_summary_rewrite = role_analysis.get('repositioning_strategy', {}).get('summary_rewrite', '')
+        if role_summary_rewrite:
+            summary_preview = role_summary_rewrite[:150] + '...' if len(role_summary_rewrite) > 150 else role_summary_rewrite
+            html += f"""
+            <div class="modification-section">
+                <div class="modification-label">Professional Summary:</div>
+                <div class="modification-content" style="font-style: italic;">
+                    ✅ Completely rewritten to match job focus<br>
+                    <span style="font-size: 12px; color: #666;">"{summary_preview}"</span>
+                </div>
+            </div>
+"""
+
+        # Validation scores if available
+        validation_score = customization.get('validation_score', 0)
+        authenticity_score = customization.get('authenticity_score', 0)
+
+        if validation_score > 0 or authenticity_score > 0:
+            html += """
+            <div class="modification-section">
+                <div class="modification-label">Quality Scores:</div>
+                <div class="modification-content">
+"""
+            if validation_score > 0:
+                html += f"""
+                    <div>Overall Quality: {validation_score}%</div>
+                    <div class="score-bar" style="max-width: 200px;">
+                        <div class="score-fill" style="width: {validation_score}%;"></div>
+                    </div>
+"""
+            if authenticity_score > 0:
+                html += f"""
+                    <div style="margin-top: 4px;">Authenticity: {authenticity_score}%</div>
+                    <div class="score-bar" style="max-width: 200px;">
+                        <div class="score-fill" style="width: {authenticity_score}%;"></div>
+                    </div>
+"""
+            html += """
+                </div>
+            </div>
+"""
+
+        html += """
+        </div>
 """
 
         return html

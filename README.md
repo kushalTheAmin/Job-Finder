@@ -64,8 +64,23 @@ Every Day at 8 AM:
 - **Keeps your core achievements and metrics unchanged**
 - **70% authentic / 30% keywords balance** (configurable)
 
-### 🚀 **Enhanced ATS Optimization System (95%+ Scores)**
-The system now includes a powerful 5-stage optimization pipeline that consistently achieves 95-96% ATS match scores:
+### 🚀 **NEW: AGGRESSIVE ATS Optimization (90-95% Scores) - Latest Update**
+**What's New**: The system now adds ALL technologies from job descriptions (required + nice-to-have) with plausibility rules to ensure natural-sounding results:
+
+**Key Features:**
+- ✅ Adds **ALL missing skills** from job description (CRITICAL + IMPORTANT + OPTIONAL)
+- ✅ Uses **Plausibility Rules** to place technologies in realistic contexts
+- ✅ Comprehensive logging for debugging (see logs/job_finder.log)
+- ✅ Distributes skills naturally across 5-8 bullets + skills section + summary
+- ✅ **90-95% ATS match** while sounding authentic (not keyword-stuffed)
+
+**Example**: For a job requiring Python, Go, PostgreSQL, Pandas:
+- Professional Summary: "Full-Stack Engineer with 8+ years building data-driven platforms using React, TypeScript, and **Python**..."
+- Skills: Backend: [**Python**, **Go**, Node.js], Data: [**Pandas**, Jupyter]
+- Bullets: "Built **Python** backend APIs with FastAPI using **PostgreSQL**"
+
+### 🔧 **6-Stage AI Resume Intelligence Pipeline**
+The system includes a powerful 6-stage optimization pipeline:
 
 **Stage 1: Smart Keyword Extraction with 3-Tier Priority**
 - CRITICAL (3x weight): Required skills, 3+ mentions, in job title
@@ -373,6 +388,69 @@ Job-Finder/
 └── deploy/                # Cloud deployment files
     ├── deploy.sh          # Run this to deploy
     └── setup_guide.md     # Detailed deployment guide
+```
+
+## 🔍 Debugging & Logging
+
+The system includes comprehensive logging to help you understand what's happening:
+
+### **Log Levels**
+Set in `config.yaml`:
+```yaml
+logging:
+  level: "INFO"  # DEBUG for detailed logs, INFO for normal, WARNING for minimal
+  log_to_file: true
+  log_file: "logs/job_finder.log"
+```
+
+### **What Gets Logged**
+
+**Stage 1 - Role Intelligence Analyzer**:
+```
+✓ Role analysis complete. Mismatch severity: MODERATE
+  Job domain: Market Intelligence
+  Resume domain: Automotive Analytics
+  ⚠ Domain mismatch detected - repositioning needed
+  Domain shift: automotive analytics → market intelligence
+```
+
+**Stage 2 - Narrative Repositioner**:
+```
+Received 12 missing skills from match analysis
+  CRITICAL: 5, IMPORTANT: 4, OPTIONAL: 3
+✓ Professional summary rewritten
+✓ Added 8 new skills: Python, Go, PostgreSQL, Pandas, Jupyter...
+✓ Modified 6 experience bullets
+✓ Narrative repositioning complete
+```
+
+**Stage 3 - ATS Optimizer**:
+```
+Extracted 25 skills
+  Critical: 8
+  Important: 10
+Current coverage: 72%
+Gap to target: 23%
+✓ ATS Optimization complete: 94% coverage
+  Bullets modified: 7
+  Keywords added: 12
+  CRITICAL skills added: 5
+  IMPORTANT skills added: 4
+  ✓ Skills section updated: 8 skills added
+```
+
+### **Viewing Logs**
+```bash
+# View real-time logs
+tail -f logs/job_finder.log
+
+# View with DEBUG level (very detailed)
+# Edit config.yaml: level: "DEBUG"
+cat logs/job_finder.log | grep -A 5 "ERROR"  # Find errors
+
+# Check specific stages
+cat logs/job_finder.log | grep "Role analysis"
+cat logs/job_finder.log | grep "ATS Optimization"
 ```
 
 ## Troubleshooting

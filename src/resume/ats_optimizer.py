@@ -90,9 +90,19 @@ class ATSOptimizer:
                 skill_extraction
             )
 
-            logger.info(f"✓ Optimization complete: {verification['final_coverage']}% coverage")
+            logger.info(f"✓ ATS Optimization complete: {verification['final_coverage']}% coverage")
             logger.info(f"  Bullets modified: {verification['changes_summary']['total_bullets_modified']}")
             logger.info(f"  Keywords added: {verification['changes_summary']['keywords_added']}")
+            logger.info(f"  CRITICAL skills added: {verification['changes_summary']['critical_skills_added']}")
+            logger.info(f"  IMPORTANT skills added: {verification['changes_summary']['important_skills_added']}")
+
+            # Log skills modifications if available
+            if 'skills_modifications' in optimization_result:
+                skills_mods = optimization_result['skills_modifications']
+                skills_added = skills_mods.get('skills_added', [])
+                if skills_added:
+                    logger.info(f"  ✓ Skills section updated: {len(skills_added)} skills added")
+                    logger.debug(f"    Added skills: {', '.join(skills_added[:10])}")
 
             return {
                 'optimized_resume': optimization_result['modified_resume'],

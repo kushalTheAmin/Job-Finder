@@ -70,12 +70,15 @@ class NarrativeRepositioner:
             # Parse JSON response
             repositioned_resume = self._parse_ai_response(result_text, resume)
 
-            logger.info("Narrative repositioning complete")
+            # Log changes made
+            self._log_changes(resume, repositioned_resume)
+
+            logger.info("✓ Narrative repositioning complete")
 
             return repositioned_resume
 
         except Exception as e:
-            logger.error(f"Error in narrative repositioning: {str(e)}")
+            logger.error(f"Error in narrative repositioning: {str(e)}", exc_info=True)
             # Return original resume on error
             return resume
 
@@ -93,6 +96,15 @@ class NarrativeRepositioner:
         missing_skills = []
         if match_analysis and 'missing_skills' in match_analysis:
             missing_skills = match_analysis['missing_skills']
+            logger.info(f"Received {len(missing_skills)} missing skills from match analysis")
+
+            # Log skill breakdown by priority
+            critical = sum(1 for s in missing_skills if s.get('priority') == 'CRITICAL')
+            important = sum(1 for s in missing_skills if s.get('priority') == 'IMPORTANT')
+            optional = sum(1 for s in missing_skills if s.get('priority') == 'OPTIONAL')
+            logger.info(f"  CRITICAL: {critical}, IMPORTANT: {important}, OPTIONAL: {optional}")
+        else:
+            logger.warning("No match_analysis provided - will extract skills from job description")
 
         missing_skills_summary = self._format_missing_skills(missing_skills) if missing_skills else "No explicit skill list provided - extract from job description"
 
@@ -303,6 +315,50 @@ Generate the repositioned resume now:"""
             )
 
         return "\n".join(formatted)
+
+    def _log_changes(self, original: Dict[str, Any], modified: Dict[str, Any]) -> None:
+        """Log what changes were made during repositioning."""
+        try:
+            # Check professional summary changes
+            orig_summary = original.get('professional_summary', '')
+            new_summary = modified.get('professional_summary', '')
+            if orig_summary != new_summary:
+                logger.info("  ✓ Professional summary rewritten")
+                logger.debug(f"    Before: {orig_summary[:80]}...")
+                logger.debug(f"    After:  {new_summary[:80]}...")
+
+            # Check skills section changes
+            orig_skills = original.get('skills', {})
+            new_skills = modified.get('skills', {})
+            if orig_skills != new_skills:
+                added_skills = []
+                for category, skills_list in new_skills.items():
+                    if category not in orig_skills:
+                        added_skills.extend(skills_list)
+                    else:
+                        for skill in skills_list:
+                            if skill not in orig_skills.get(category, []):
+                                added_skills.append(skill)
+
+                if added_skills:
+                    logger.info(f"  ✓ Added {len(added_skills)} new skills: {', '.join(added_skills[:5])}{'...' if len(added_skills) > 5 else ''}")
+
+            # Check bullet changes
+            orig_exp = original.get('experience', [])
+            new_exp = modified.get('experience', [])
+            bullets_modified = 0
+            for i, (orig_job, new_job) in enumerate(zip(orig_exp, new_exp)):
+                orig_bullets = orig_job.get('responsibilities', [])
+                new_bullets = new_job.get('responsibilities', [])
+                for j, (orig_bullet, new_bullet) in enumerate(zip(orig_bullets, new_bullets)):
+                    if orig_bullet != new_bullet:
+                        bullets_modified += 1
+
+            if bullets_modified > 0:
+                logger.info(f"  ✓ Modified {bullets_modified} experience bullets")
+
+        except Exception as e:
+            logger.debug(f"Error logging changes: {e}")
 
     def _parse_ai_response(self, response_text: str, original_resume: Dict[str, Any]) -> Dict[str, Any]:
         """Parse AI response into resume JSON."""

@@ -58,7 +58,28 @@ class RoleIntelligenceAnalyzer:
             # Parse JSON response
             result = self._parse_ai_response(result_text)
 
-            logger.info(f"Role analysis complete. Mismatch severity: {result.get('mismatch_severity', 'UNKNOWN')}")
+            # Log analysis results
+            mismatch = result.get('mismatch_severity', 'UNKNOWN')
+            logger.info(f"✓ Role analysis complete. Mismatch severity: {mismatch}")
+
+            if mismatch != 'NONE':
+                job_domain = result.get('job_domain_focus', 'Unknown')
+                resume_domain = result.get('resume_domain_focus', 'Unknown')
+                domain_mismatch = result.get('domain_mismatch', False)
+
+                logger.info(f"  Job domain: {job_domain}")
+                logger.info(f"  Resume domain: {resume_domain}")
+                if domain_mismatch:
+                    logger.info(f"  ⚠ Domain mismatch detected - repositioning needed")
+
+                gap = result.get('gap_description', '')
+                if gap:
+                    logger.debug(f"  Gap: {gap[:100]}...")
+
+                # Log repositioning strategy
+                strategy = result.get('repositioning_strategy', {})
+                if strategy.get('domain_context_shift'):
+                    logger.info(f"  Domain shift: {strategy.get('domain_context_shift')}")
 
             return result
 

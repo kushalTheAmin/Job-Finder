@@ -346,10 +346,24 @@ Generate the repositioned resume now:"""
             # Check bullet changes
             orig_exp = original.get('experience', [])
             new_exp = modified.get('experience', [])
+
+            # Ensure both are lists (handle None case)
+            if not isinstance(orig_exp, list):
+                orig_exp = []
+            if not isinstance(new_exp, list):
+                new_exp = []
+
             bullets_modified = 0
             for i, (orig_job, new_job) in enumerate(zip(orig_exp, new_exp)):
-                orig_bullets = orig_job.get('responsibilities', [])
-                new_bullets = new_job.get('responsibilities', [])
+                orig_bullets = orig_job.get('responsibilities', []) if isinstance(orig_job, dict) else []
+                new_bullets = new_job.get('responsibilities', []) if isinstance(new_job, dict) else []
+
+                # Ensure both are lists
+                if not isinstance(orig_bullets, list):
+                    orig_bullets = []
+                if not isinstance(new_bullets, list):
+                    new_bullets = []
+
                 for j, (orig_bullet, new_bullet) in enumerate(zip(orig_bullets, new_bullets)):
                     if orig_bullet != new_bullet:
                         bullets_modified += 1

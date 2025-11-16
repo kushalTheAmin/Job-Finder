@@ -457,7 +457,10 @@ class EmailSender:
             # Count skills added
             all_keywords = []
             for mod in modifications[:3]:  # Top 3 modifications
-                all_keywords.extend(mod.get('keywords_added', []))
+                if isinstance(mod, dict):
+                    keywords = mod.get('keywords_added', [])
+                    if isinstance(keywords, list):
+                        all_keywords.extend(keywords)
 
             if all_keywords:
                 unique_keywords = list(set(all_keywords))
@@ -480,9 +483,14 @@ class EmailSender:
                 <div class="modification-label">Top Changes (Bullet Examples):</div>
 """
             for i, mod in enumerate(modifications[:3], 1):
+                if not isinstance(mod, dict):
+                    continue
+
                 original = mod.get('original', '')
                 modified = mod.get('modified', '')
                 keywords = mod.get('keywords_added', [])
+                if not isinstance(keywords, list):
+                    keywords = []
 
                 if original and modified and original != modified:
                     # Truncate for readability
